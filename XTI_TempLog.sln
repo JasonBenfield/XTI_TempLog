@@ -1,0 +1,72 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30611.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{A96E0EB1-E892-48C2-9A33-C9AD5DB3473D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{94E10B87-81C3-4861-BB06-950DF2D2E8D0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XTI_TempLog.Tests", "Tests\XTI_TempLog.Tests\XTI_TempLog.Tests.csproj", "{8172FD7B-CA8C-4B90-9C79-5D077653CEB3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XTI_TempLog", "Lib\XTI_TempLog\XTI_TempLog.csproj", "{BE399943-1FDD-453C-85D2-4BE88DBA80A7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XTI_TempLog.Abstractions", "Lib\XTI_TempLog.Abstractions\XTI_TempLog.Abstractions.csproj", "{1FA336FB-85B5-4BE7-A93B-DCEAD83001B0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XTI_TempLog.Fakes", "Lib\XTI_TempLog.Fakes\XTI_TempLog.Fakes.csproj", "{1A2957CA-054B-4609-A750-8A3350D0B8FB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A13BAA94-42A2-4865-B5A8-DDA5D6924995}"
+	ProjectSection(SolutionItems) = preProject
+		templog.ps1 = templog.ps1
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XTI_TempLog.Extensions", "Lib\XTI_TempLog.Extensions\XTI_TempLog.Extensions.csproj", "{6D25018C-3483-46F7-8EFD-53D8FAFA58D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XTI_TempLog.IntegrationTests", "Tests\XTI_TempLog.IntegrationTests\XTI_TempLog.IntegrationTests.csproj", "{B50305F7-2379-49B9-A465-358211B49DC2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8172FD7B-CA8C-4B90-9C79-5D077653CEB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8172FD7B-CA8C-4B90-9C79-5D077653CEB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8172FD7B-CA8C-4B90-9C79-5D077653CEB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8172FD7B-CA8C-4B90-9C79-5D077653CEB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE399943-1FDD-453C-85D2-4BE88DBA80A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE399943-1FDD-453C-85D2-4BE88DBA80A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE399943-1FDD-453C-85D2-4BE88DBA80A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE399943-1FDD-453C-85D2-4BE88DBA80A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FA336FB-85B5-4BE7-A93B-DCEAD83001B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FA336FB-85B5-4BE7-A93B-DCEAD83001B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FA336FB-85B5-4BE7-A93B-DCEAD83001B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FA336FB-85B5-4BE7-A93B-DCEAD83001B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A2957CA-054B-4609-A750-8A3350D0B8FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A2957CA-054B-4609-A750-8A3350D0B8FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A2957CA-054B-4609-A750-8A3350D0B8FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A2957CA-054B-4609-A750-8A3350D0B8FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D25018C-3483-46F7-8EFD-53D8FAFA58D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D25018C-3483-46F7-8EFD-53D8FAFA58D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D25018C-3483-46F7-8EFD-53D8FAFA58D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D25018C-3483-46F7-8EFD-53D8FAFA58D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B50305F7-2379-49B9-A465-358211B49DC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B50305F7-2379-49B9-A465-358211B49DC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B50305F7-2379-49B9-A465-358211B49DC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B50305F7-2379-49B9-A465-358211B49DC2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8172FD7B-CA8C-4B90-9C79-5D077653CEB3} = {94E10B87-81C3-4861-BB06-950DF2D2E8D0}
+		{BE399943-1FDD-453C-85D2-4BE88DBA80A7} = {A96E0EB1-E892-48C2-9A33-C9AD5DB3473D}
+		{1FA336FB-85B5-4BE7-A93B-DCEAD83001B0} = {A96E0EB1-E892-48C2-9A33-C9AD5DB3473D}
+		{1A2957CA-054B-4609-A750-8A3350D0B8FB} = {A96E0EB1-E892-48C2-9A33-C9AD5DB3473D}
+		{6D25018C-3483-46F7-8EFD-53D8FAFA58D1} = {A96E0EB1-E892-48C2-9A33-C9AD5DB3473D}
+		{B50305F7-2379-49B9-A465-358211B49DC2} = {94E10B87-81C3-4861-BB06-950DF2D2E8D0}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6327EF25-7B92-4B5B-931D-D4F8C842390A}
+	EndGlobalSection
+EndGlobal
