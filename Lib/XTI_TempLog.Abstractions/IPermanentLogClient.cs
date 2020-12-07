@@ -10,5 +10,6 @@ namespace XTI_TempLog.Abstractions
         Task EndSession(IEndSessionModel model);
         Task AuthenticateSession(IAuthenticateSessionModel model);
         Task LogEvent(ILogEventModel model);
+        Task LogBatch(ILogBatchModel model);
     }
 }
