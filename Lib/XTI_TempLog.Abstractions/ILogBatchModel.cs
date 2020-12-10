@@ -7,5 +7,6 @@
         ILogEventModel[] LogEvents { get; set; }
         IStartRequestModel[] StartRequests { get; set; }
         IStartSessionModel[] StartSessions { get; set; }
+        IEndSessionModel[] EndSessions { get; set; }
     }
 }
