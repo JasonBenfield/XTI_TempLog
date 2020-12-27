@@ -40,6 +40,14 @@ function TempLog-New-XtiVersion {
     $script:tempLogConfig | New-XtiVersion @PsBoundParameters
 }
 
+function TempLog-Xti-Merge {
+    param(
+        [Parameter(Position=0)]
+        [string] $CommitMessage
+    )
+    $script:tempLogConfig | Xti-Merge @PsBoundParameters
+}
+
 function TempLog-New-XtiPullRequest {
     param(
         [Parameter(Position=0)]
@@ -59,4 +67,7 @@ function TempLog-Publish {
         [switch] $Prod
     )
     $script:tempLogConfig | Xti-PublishPackage @PsBoundParameters
+    if($Prod) {
+        $script:tempLogConfig | Xti-Merge
+    }
 }
