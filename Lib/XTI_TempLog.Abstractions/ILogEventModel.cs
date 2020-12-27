@@ -7,7 +7,7 @@ namespace XTI_TempLog.Abstractions
         string EventKey { get; set; }
         string RequestKey { get; set; }
         int Severity { get; set; }
-        DateTime TimeOccurred { get; set; }
+        DateTimeOffset TimeOccurred { get; set; }
         string Caption { get; set; }
         string Message { get; set; }
         string Detail { get; set; }
