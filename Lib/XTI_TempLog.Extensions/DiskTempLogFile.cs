@@ -17,7 +17,7 @@ namespace XTI_TempLog.Extensions
 
         public string Name { get; }
 
-        public DateTime LastModified { get; }
+        public DateTimeOffset LastModified { get; }
 
         public ITempLogFile WithNewName(string name)
         {

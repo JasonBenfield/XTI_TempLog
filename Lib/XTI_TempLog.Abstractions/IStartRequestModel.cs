@@ -8,6 +8,6 @@ namespace XTI_TempLog.Abstractions
         string SessionKey { get; set; }
         public string AppType { get; set; }
         string Path { get; set; }
-        DateTime TimeStarted { get; set; }
+        DateTimeOffset TimeStarted { get; set; }
     }
 }

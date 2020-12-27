@@ -9,18 +9,18 @@ namespace XTI_TempLog
     {
         protected TempLog() { }
 
-        public IEnumerable<ITempLogFile> StartSessionFiles(DateTime modifiedUntil) => Files(FileNames("startSession.*.log"), modifiedUntil);
-        public IEnumerable<ITempLogFile> StartRequestFiles(DateTime modifiedUntil) => Files(FileNames("startRequest.*.log"), modifiedUntil);
-        public IEnumerable<ITempLogFile> EndRequestFiles(DateTime modifiedUntil) => Files(FileNames("endRequest.*.log"), modifiedUntil);
-        public IEnumerable<ITempLogFile> AuthSessionFiles(DateTime modifiedUntil) => Files(FileNames("authSession.*.log"), modifiedUntil);
-        public IEnumerable<ITempLogFile> EndSessionFiles(DateTime modifiedUntil) => Files(FileNames("endSession.*.log"), modifiedUntil);
-        public IEnumerable<ITempLogFile> LogEventFiles(DateTime modifiedUntil) => Files(FileNames("event.*.log"), modifiedUntil);
-        public IEnumerable<ITempLogFile> ProcessingFiles(DateTime modifiedUntil) => Files(FileNames("*.processing"), modifiedUntil);
+        public IEnumerable<ITempLogFile> StartSessionFiles(DateTimeOffset modifiedUntil) => Files(FileNames("startSession.*.log"), modifiedUntil);
+        public IEnumerable<ITempLogFile> StartRequestFiles(DateTimeOffset modifiedUntil) => Files(FileNames("startRequest.*.log"), modifiedUntil);
+        public IEnumerable<ITempLogFile> EndRequestFiles(DateTimeOffset modifiedUntil) => Files(FileNames("endRequest.*.log"), modifiedUntil);
+        public IEnumerable<ITempLogFile> AuthSessionFiles(DateTimeOffset modifiedUntil) => Files(FileNames("authSession.*.log"), modifiedUntil);
+        public IEnumerable<ITempLogFile> EndSessionFiles(DateTimeOffset modifiedUntil) => Files(FileNames("endSession.*.log"), modifiedUntil);
+        public IEnumerable<ITempLogFile> LogEventFiles(DateTimeOffset modifiedUntil) => Files(FileNames("event.*.log"), modifiedUntil);
+        public IEnumerable<ITempLogFile> ProcessingFiles(DateTimeOffset modifiedUntil) => Files(FileNames("*.processing"), modifiedUntil);
 
-        private IEnumerable<ITempLogFile> Files(IEnumerable<string> fileNames, DateTime modifiedUntil)
+        private IEnumerable<ITempLogFile> Files(IEnumerable<string> fileNames, DateTimeOffset modifiedUntil)
             => fileNames
                 .Select(f => CreateFile(f))
-                .Where(f => f.LastModified.ToUniversalTime() <= modifiedUntil.ToUniversalTime());
+                .Where(f => f.LastModified <= modifiedUntil);
 
         protected abstract IEnumerable<string> FileNames(string pattern);
 

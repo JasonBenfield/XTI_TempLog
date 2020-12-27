@@ -9,6 +9,6 @@ namespace XTI_TempLog
         public string SessionKey { get; set; }
         public string AppType { get; set; }
         public string Path { get; set; }
-        public DateTime TimeStarted { get; set; }
+        public DateTimeOffset TimeStarted { get; set; }
     }
 }

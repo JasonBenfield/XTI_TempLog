@@ -7,7 +7,7 @@ namespace XTI_TempLog.Abstractions
         string SessionKey { get; set; }
         string UserName { get; set; }
         string RequesterKey { get; set; }
-        DateTime TimeStarted { get; set; }
+        DateTimeOffset TimeStarted { get; set; }
         string RemoteAddress { get; set; }
         string UserAgent { get; set; }
     }

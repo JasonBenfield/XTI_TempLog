@@ -18,14 +18,14 @@ namespace XTI_TempLog.Fakes
     {
         private string contents;
 
-        internal FakeTempLogFile(string name, DateTime lastModified)
+        internal FakeTempLogFile(string name, DateTimeOffset lastModified)
         {
             Name = name;
             LastModified = lastModified;
         }
 
         public string Name { get; }
-        public DateTime LastModified { get; }
+        public DateTimeOffset LastModified { get; }
 
         public event EventHandler<RenamedEventArgs> Renamed;
 

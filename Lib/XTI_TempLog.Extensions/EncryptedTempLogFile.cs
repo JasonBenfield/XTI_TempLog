@@ -18,7 +18,7 @@ namespace XTI_TempLog.Extensions
 
         public string Name { get => source.Name; }
 
-        public DateTime LastModified { get => source.LastModified; }
+        public DateTimeOffset LastModified { get => source.LastModified; }
 
         public Task Write(string contents)
         {
