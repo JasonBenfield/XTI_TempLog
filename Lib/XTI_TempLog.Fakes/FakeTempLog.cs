@@ -54,7 +54,7 @@ namespace XTI_TempLog.Fakes
         protected override IEnumerable<string> FileNames(string pattern)
             => files.Keys.Where
             (
-                key => new Regex(pattern.Replace("*", ".*"), RegexOptions.IgnoreCase).IsMatch(key)
+                key => new Regex($"^{pattern.Replace("*", ".*")}$", RegexOptions.IgnoreCase).IsMatch(key)
             )
             .ToArray();
     }
