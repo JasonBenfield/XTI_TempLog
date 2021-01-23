@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using XTI_Core;
@@ -113,7 +114,7 @@ namespace XTI_TempLog
                 TimeOccurred = clock.Now(),
                 Severity = severity.Value,
                 Caption = caption,
-                Message = ex.Message,
+                Message = getExceptionMessage(ex),
                 Detail = ex.StackTrace
             };
             var serialized = JsonSerializer.Serialize(tempEvent);
@@ -121,5 +122,16 @@ namespace XTI_TempLog
             return tempEvent;
         }
 
+        private string getExceptionMessage(Exception ex)
+        {
+            var messages = new List<string>();
+            var currentEx = ex;
+            while (currentEx != null)
+            {
+                messages.Add(currentEx.Message);
+                currentEx = currentEx.InnerException;
+            }
+            return string.Join("\r\n", messages);
+        }
     }
 }
