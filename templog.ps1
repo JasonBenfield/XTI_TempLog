@@ -5,69 +5,44 @@ $script:tempLogConfig = [PSCustomObject]@{
     RepoName = "XTI_TempLog"
     AppName = "XTI_TempLog"
     AppType = "Package"
-    ProjectDir = ""
 }
 
-function TempLog-New-XtiIssue {
+function TempLog-NewVersion {
+    param(
+        [Parameter(Position=0)]
+        [ValidateSet("major", "minor", "patch")]
+        $VersionType = "minor"
+    )
+    $script:tempLogConfig | New-XtiVersion @PsBoundParameters
+}
+
+function TempLog-NewIssue {
     param(
         [Parameter(Mandatory, Position=0)]
         [string] $IssueTitle,
-        $Labels = @(),
-        [string] $Body = "",
         [switch] $Start
     )
     $script:tempLogConfig | New-XtiIssue @PsBoundParameters
 }
 
-function TempLog-Xti-StartIssue {
+function TempLog-StartIssue {
     param(
         [Parameter(Position=0)]
-        [long]$IssueNumber = 0,
-        $IssueBranchTitle = "",
-        $AssignTo = ""
+        [long]$IssueNumber = 0
     )
     $script:tempLogConfig | Xti-StartIssue @PsBoundParameters
 }
 
-function TempLog-New-XtiVersion {
-    param(
-        [Parameter(Position=0)]
-        [ValidateSet("major", "minor", "patch")]
-        $VersionType = "minor",
-        [ValidateSet("Development", "Production", "Staging", "Test")]
-        $EnvName = "Production"
-    )
-    $script:tempLogConfig | New-XtiVersion @PsBoundParameters
-}
-
-function TempLog-Xti-Merge {
-    param(
-        [Parameter(Position=0)]
-        [string] $CommitMessage
-    )
-    $script:tempLogConfig | Xti-Merge @PsBoundParameters
-}
-
-function TempLog-New-XtiPullRequest {
-    param(
-        [Parameter(Position=0)]
-        [string] $CommitMessage
-    )
-    $script:tempLogConfig | New-XtiPullRequest @PsBoundParameters
-}
-
-function TempLog-Xti-PostMerge {
+function TempLog-CompleteIssue {
     param(
     )
-    $script:tempLogConfig | Xti-PostMerge @PsBoundParameters
+    $script:tempLogConfig | Xti-CompleteIssue @PsBoundParameters
 }
 
 function TempLog-Publish {
     param(
-        [switch] $Prod
+        [ValidateSet("Development", "Production", "Staging", "Test")]
+        $EnvName = "Development"
     )
     $script:tempLogConfig | Xti-PublishPackage @PsBoundParameters
-    if($Prod) {
-        $script:tempLogConfig | Xti-Merge
-    }
 }

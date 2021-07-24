@@ -102,7 +102,7 @@ namespace XTI_TempLog.IntegrationTests
             var host = Host.CreateDefaultBuilder()
                 .ConfigureServices
                 (
-                    services =>
+                    (hostContext, services) =>
                     {
                         services.AddScoped<Clock, UtcClock>();
                         services.AddScoped<IAppEnvironmentContext, TestAppEnvironmentContext>();
@@ -112,7 +112,7 @@ namespace XTI_TempLog.IntegrationTests
                             sp => new AppDataFolder().WithSubFolder("Test").WithSubFolder("TestTempLog")
                         );
                         services.AddXtiDataProtection();
-                        services.AddTempLogServices();
+                        services.AddTempLogServices(hostContext.Configuration);
                     }
                 )
                 .Build();
