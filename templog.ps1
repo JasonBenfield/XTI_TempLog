@@ -44,5 +44,5 @@ function TempLog-Publish {
         [ValidateSet("Development", "Production", "Staging", "Test")]
         $EnvName = "Development"
     )
-    $script:tempLogConfig | Xti-PublishPackage @PsBoundParameters
+    $script:tempLogConfig | Xti-Publish @PsBoundParameters
 }
