@@ -10,7 +10,7 @@ namespace XTI_TempLog.Extensions
         public static void AddTempLogServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<TempLogOptions>(configuration.GetSection(TempLogOptions.TempLog));
-            services.AddScoped<ThrottledLogs>();
+            services.AddSingleton<ThrottledLogs>();
             services.AddScoped<TempLog>(sp =>
             {
                 var dataProtector = sp.GetDataProtector("XTI_TempLog");
