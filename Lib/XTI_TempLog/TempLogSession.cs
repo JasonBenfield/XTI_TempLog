@@ -11,15 +11,27 @@ namespace XTI_TempLog
         private readonly TempLog log;
         private readonly IAppEnvironmentContext appEnvironmentContext;
         private readonly Clock clock;
-
         private readonly CurrentSession currentSession;
+        private readonly ThrottledLogs throttledLogs;
 
-        public TempLogSession(TempLog log, IAppEnvironmentContext appEnvironmentContext, CurrentSession currentSession, Clock clock)
+        private StartRequestModel startRequestModel;
+        private ThrottledLog throttledLog;
+        private bool isRequestLogged;
+
+        public TempLogSession
+        (
+            TempLog log,
+            IAppEnvironmentContext appEnvironmentContext,
+            CurrentSession currentSession,
+            Clock clock,
+            ThrottledLogs throttledLogs
+        )
         {
             this.log = log;
             this.appEnvironmentContext = appEnvironmentContext;
             this.currentSession = currentSession;
             this.clock = clock;
+            this.throttledLogs = throttledLogs;
         }
 
         public async Task<StartSessionModel> StartSession()
@@ -60,23 +72,35 @@ namespace XTI_TempLog
             return session;
         }
 
-        private string requestKey;
-
         public async Task<StartRequestModel> StartRequest(string path)
         {
             var environment = await appEnvironmentContext.Value();
-            requestKey = generateKey();
-            var request = new StartRequestModel
+            startRequestModel = new StartRequestModel
             {
-                RequestKey = requestKey,
+                RequestKey = generateKey(),
                 SessionKey = currentSession.SessionKey,
                 AppType = environment.AppType,
                 Path = path,
                 TimeStarted = clock.Now()
             };
-            var serialized = JsonSerializer.Serialize(request);
-            await log.Write($"startRequest.{request.RequestKey}.log", serialized);
-            return request;
+            throttledLog = throttledLogs.GetThrottledLog(path);
+            if (throttledLog.CanLogRequest())
+            {
+                await startRequest();
+            }
+            else
+            {
+                isRequestLogged = false;
+            }
+            return startRequestModel;
+        }
+
+        private async Task startRequest()
+        {
+            var serialized = JsonSerializer.Serialize(startRequestModel);
+            await log.Write($"startRequest.{startRequestModel.RequestKey}.log", serialized);
+            throttledLog.RequestLogged();
+            isRequestLogged = true;
         }
 
         private string generateKey() => Guid.NewGuid().ToString("N");
@@ -85,11 +109,14 @@ namespace XTI_TempLog
         {
             var request = new EndRequestModel
             {
-                RequestKey = requestKey,
+                RequestKey = startRequestModel.RequestKey,
                 TimeEnded = clock.Now()
             };
-            var serialized = JsonSerializer.Serialize(request);
-            await log.Write($"endRequest.{request.RequestKey}.log", serialized);
+            if (isRequestLogged)
+            {
+                var serialized = JsonSerializer.Serialize(request);
+                await log.Write($"endRequest.{request.RequestKey}.log", serialized);
+            }
             return request;
         }
 
@@ -110,15 +137,23 @@ namespace XTI_TempLog
             var tempEvent = new LogEventModel
             {
                 EventKey = generateKey(),
-                RequestKey = requestKey,
+                RequestKey = startRequestModel.RequestKey,
                 TimeOccurred = clock.Now(),
                 Severity = severity.Value,
                 Caption = caption,
                 Message = getExceptionMessage(ex),
                 Detail = ex.StackTrace
             };
-            var serialized = JsonSerializer.Serialize(tempEvent);
-            await log.Write($"event.{tempEvent.EventKey}.log", serialized);
+            if (throttledLog.CanLogException())
+            {
+                if (!isRequestLogged)
+                {
+                    await startRequest();
+                }
+                var serialized = JsonSerializer.Serialize(tempEvent);
+                await log.Write($"event.{tempEvent.EventKey}.log", serialized);
+                throttledLog.ExceptionLogged();
+            }
             return tempEvent;
         }
 
@@ -133,5 +168,6 @@ namespace XTI_TempLog
             }
             return string.Join("\r\n", messages);
         }
+
     }
 }
