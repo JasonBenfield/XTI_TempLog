@@ -11,23 +11,13 @@ namespace XTI_TempLog
         private readonly int throttleExceptionInterval;
         private DateTimeOffset timeLastExceptionLogged;
 
-        public ThrottledLog(TempLogThrottleOptions throttleOptions, Clock clock)
+        public ThrottledLog(ThrottledPath throttledPath, Clock clock)
         {
-            if (string.IsNullOrWhiteSpace(throttleOptions?.Path))
-            {
-                throw new ArgumentException("Path is required");
-            }
-            Path = throttleOptions.Path.Trim().ToLower();
-            throttleLogInterval = throttleOptions.ThrottleRequestInterval;
-            throttleExceptionInterval = throttleOptions.ThrottleExceptionInterval;
+            throttleLogInterval = throttledPath.ThrottleRequestInterval;
+            throttleExceptionInterval = throttledPath.ThrottleExceptionInterval;
             timeLastRequestLogged = DateTimeOffset.MinValue;
             this.clock = clock;
         }
-
-        public string Path { get; }
-
-        public bool IsForPath(string path)
-            => (path?.Trim() ?? "").EndsWith(Path, StringComparison.OrdinalIgnoreCase);
 
         public bool CanLogRequest()
         {
