@@ -8,20 +8,30 @@ namespace XTI_TempLog
     public sealed class ThrottledLogs
     {
         private readonly Clock clock;
-        private readonly List<ThrottledLog> throttledLogs = new List<ThrottledLog>();
+        private readonly ThrottledPath[] throttles;
+        private readonly Dictionary<string, ThrottledLog> throttledLogs = new Dictionary<string, ThrottledLog>();
 
         public ThrottledLogs(Clock clock, IOptions<TempLogOptions> options)
         {
             this.clock = clock;
-            foreach (var throttle in (options.Value.Throttles ?? new TempLogThrottleOptions[] { }))
-            {
-                throttledLogs.Add(new ThrottledLog(throttle, clock));
-            }
+            throttles = (options.Value.Throttles ?? new TempLogThrottleOptions[] { })
+                .Select(t => new ThrottledPath(t))
+                .ToArray();
         }
 
         internal ThrottledLog GetThrottledLog(string path)
-            => throttledLogs.FirstOrDefault(tl => tl.IsForPath(path))
-                ?? new ThrottledLog(new TempLogThrottleOptions { Path = path }, clock);
+        {
+            path = path?.ToLower().Trim() ?? "";
+            if (!throttledLogs.TryGetValue(path, out var throttledLog))
+            {
+                var throttle = throttles
+                    .FirstOrDefault(t => t.IsForPath(path))
+                    ?? new ThrottledPath(new TempLogThrottleOptions { Path = path });
+                throttledLog = new ThrottledLog(throttle, clock);
+                throttledLogs.Add(path, throttledLog);
+            }
+            return throttledLog;
+        }
 
     }
 }
