@@ -41,6 +41,32 @@ namespace XTI_TempLog.Tests
         }
 
         [Test]
+        [TestCase("group1/action1"), TestCase("group1/action2")]
+        public async Task ShouldThrottlePathBasedOnRegularExpression(string path)
+        {
+            var throttleInterval = TimeSpan.FromMinutes(1);
+            var throttles = new[]
+            {
+                new TempLogThrottleOptions
+                {
+                    Path = "group1/action\\d+$",
+                    ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
+                }
+            };
+            var services = setup(throttles);
+            var tempLogSession = services.GetService<TempLogSession>();
+            await tempLogSession.StartSession();
+            await tempLogSession.StartRequest($"Test/Current/{path}");
+            await tempLogSession.EndRequest();
+            var clock = (FakeClock)services.GetService<Clock>();
+            clock.Add(throttleInterval.Subtract(TimeSpan.FromSeconds(1)));
+            await tempLogSession.StartRequest($"Test/Current/{path}");
+            var tempLog = services.GetService<TempLog>();
+            var startRequests = tempLog.StartRequestFiles(clock.Now()).ToArray();
+            Assert.That(startRequests.Length, Is.EqualTo(1), "Should not log second start request within the throttle interval");
+        }
+
+        [Test]
         public async Task ShouldNotLogEndRequest_WhenMadeBeforeThrottledInterval()
         {
             var path = "group1/action1";
