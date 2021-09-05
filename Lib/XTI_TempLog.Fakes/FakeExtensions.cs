@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using XTI_App.Fakes;
+using XTI_Core.Fakes;
 
 namespace XTI_TempLog.Fakes
 {
