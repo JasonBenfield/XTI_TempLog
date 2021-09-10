@@ -9,10 +9,20 @@ namespace XTI_TempLog.Fakes
     {
         private readonly Dictionary<string, FakeTempLogFile> files = new Dictionary<string, FakeTempLogFile>();
         private readonly Clock clock;
+        private bool writeToConsole;
 
         public FakeTempLog(Clock clock)
         {
             this.clock = clock;
+        }
+
+        public void WriteToConsole()
+        {
+            writeToConsole = true;
+            foreach (var file in files.Values)
+            {
+                file.WriteToConsole();
+            }
         }
 
         public string[] Files() => files.Keys.ToArray();
@@ -24,6 +34,10 @@ namespace XTI_TempLog.Fakes
             {
                 var lastModified = clock.Now();
                 file = new FakeTempLogFile(name, lastModified);
+                if (writeToConsole)
+                {
+                    file.WriteToConsole();
+                }
                 addFile(key, file);
             }
             return file;
