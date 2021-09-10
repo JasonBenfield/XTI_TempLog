@@ -17,11 +17,17 @@ namespace XTI_TempLog.Fakes
     public sealed class FakeTempLogFile : ITempLogFile
     {
         private string contents;
+        private bool writeToConsole = false;
 
         internal FakeTempLogFile(string name, DateTimeOffset lastModified)
         {
             Name = name;
             LastModified = lastModified;
+        }
+
+        public void WriteToConsole()
+        {
+            this.writeToConsole = true;
         }
 
         public string Name { get; }
@@ -40,7 +46,10 @@ namespace XTI_TempLog.Fakes
 
         public Task Write(string contents)
         {
-            Console.WriteLine($"Temp Log {Name}\r\n{contents}");
+            if (writeToConsole)
+            {
+                Console.WriteLine($"Temp Log {Name}\r\n{contents}");
+            }
             this.contents = contents;
             return Task.CompletedTask;
         }
