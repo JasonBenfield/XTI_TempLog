@@ -40,6 +40,7 @@ namespace XTI_TempLog.Fakes
 
         public Task Write(string contents)
         {
+            Console.WriteLine($"Temp Log {Name}\r\n{contents}");
             this.contents = contents;
             return Task.CompletedTask;
         }
