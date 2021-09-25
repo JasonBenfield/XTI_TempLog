@@ -107,11 +107,15 @@ namespace XTI_TempLog.IntegrationTests
                         services.AddScoped<Clock, UtcClock>();
                         services.AddScoped<IAppEnvironmentContext, TestAppEnvironmentContext>();
                         services.AddSingleton<CurrentSession>();
+                        services.AddSingleton<XtiFolder>();
                         services.AddSingleton
                         (
-                            sp => new AppDataFolder().WithSubFolder("Test").WithSubFolder("TestTempLog")
+                            sp =>
+                                sp.GetService<XtiFolder>()
+                                    .SharedAppDataFolder()
+                                    .WithSubFolder("TestTempLog")
                         );
-                        services.AddXtiDataProtection();
+                        services.AddXtiDataProtection(hostContext.HostingEnvironment);
                         services.AddTempLogServices(hostContext.Configuration);
                     }
                 )
