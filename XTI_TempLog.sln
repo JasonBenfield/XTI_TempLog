@@ -20,9 +20,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		templog.ps1 = templog.ps1
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XTI_TempLog.Extensions", "Lib\XTI_TempLog.Extensions\XTI_TempLog.Extensions.csproj", "{6D25018C-3483-46F7-8EFD-53D8FAFA58D1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XTI_TempLog.Extensions", "Lib\XTI_TempLog.Extensions\XTI_TempLog.Extensions.csproj", "{6D25018C-3483-46F7-8EFD-53D8FAFA58D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XTI_TempLog.IntegrationTests", "Tests\XTI_TempLog.IntegrationTests\XTI_TempLog.IntegrationTests.csproj", "{B50305F7-2379-49B9-A465-358211B49DC2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XTI_TempLog.IntegrationTests", "Tests\XTI_TempLog.IntegrationTests\XTI_TempLog.IntegrationTests.csproj", "{B50305F7-2379-49B9-A465-358211B49DC2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
