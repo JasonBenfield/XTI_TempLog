@@ -9,5 +9,6 @@ namespace XTI_TempLog.Abstractions
         public string AppType { get; set; }
         string Path { get; set; }
         DateTimeOffset TimeStarted { get; set; }
+        int ActualCount { get; set; }
     }
 }

@@ -11,5 +11,6 @@ namespace XTI_TempLog.Abstractions
         string Caption { get; set; }
         string Message { get; set; }
         string Detail { get; set; }
+        int ActualCount { get; set; }
     }
 }

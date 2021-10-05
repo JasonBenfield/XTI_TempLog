@@ -3,7 +3,7 @@ using XTI_Core;
 
 namespace XTI_TempLog
 {
-    internal sealed class ThrottledLog
+    public sealed class ThrottledLog
     {
         private readonly Clock clock;
         private readonly int throttleLogInterval;
@@ -18,6 +18,18 @@ namespace XTI_TempLog
             timeLastRequestLogged = DateTimeOffset.MinValue;
             this.clock = clock;
         }
+
+        public int RequestCount { get; private set; }
+
+        public void IncrementRequestCount() => RequestCount++;
+
+        public void ResetRequestCount() => RequestCount = 0;
+
+        public int ExceptionCount { get; private set; }
+
+        public void IncrementExceptionCount() => ExceptionCount++;
+
+        public void ResetExceptionCount() => ExceptionCount = 0;
 
         public bool CanLogRequest()
         {

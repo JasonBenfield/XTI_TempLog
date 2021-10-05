@@ -10,5 +10,6 @@ namespace XTI_TempLog
         public string AppType { get; set; }
         public string Path { get; set; }
         public DateTimeOffset TimeStarted { get; set; }
+        public int ActualCount { get; set; }
     }
 }
