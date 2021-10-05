@@ -19,6 +19,12 @@ namespace XTI_TempLog
                 .ToArray();
         }
 
+        public ThrottledLogs(Clock clock, ThrottledPath[] throttles)
+        {
+            this.clock = clock;
+            this.throttles = throttles ?? new ThrottledPath[] { };
+        }
+
         internal ThrottledLog GetThrottledLog(string path)
         {
             path = path?.ToLower().Trim() ?? "";

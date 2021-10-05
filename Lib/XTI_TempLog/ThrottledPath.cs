@@ -7,15 +7,20 @@ namespace XTI_TempLog
         private readonly Regex pathRegex;
 
         public ThrottledPath(TempLogThrottleOptions options)
+            : this(options.Path, options.ThrottleRequestInterval, options.ThrottleExceptionInterval)
         {
-            var path = options.Path ?? "";
+        }
+
+        public ThrottledPath(string path, int throttleRequestInterval, int throttleExceptionInterval)
+        {
+            path = path?.Trim() ?? "";
             if (path.Contains("/") && !path.Contains("\\/"))
             {
                 path = path.Replace("/", "\\/");
             }
             pathRegex = new Regex($"{path}", RegexOptions.IgnoreCase);
-            ThrottleRequestInterval = options.ThrottleRequestInterval;
-            ThrottleExceptionInterval = options.ThrottleExceptionInterval;
+            ThrottleRequestInterval = throttleRequestInterval;
+            ThrottleExceptionInterval = throttleExceptionInterval;
         }
 
         public int ThrottleRequestInterval { get; }

@@ -84,9 +84,12 @@ namespace XTI_TempLog
                 TimeStarted = clock.Now()
             };
             throttledLog = throttledLogs.GetThrottledLog(path);
-            if (throttledLog.CanLogRequest())
+            var requestThrottledLog = throttledLog;
+            requestThrottledLog.IncrementRequestCount();
+            startRequestModel.ActualCount = requestThrottledLog.RequestCount;
+            if (requestThrottledLog.CanLogRequest())
             {
-                await startRequest();
+                await startRequest(requestThrottledLog);
             }
             else
             {
@@ -95,7 +98,7 @@ namespace XTI_TempLog
             return startRequestModel;
         }
 
-        private async Task startRequest()
+        private async Task startRequest(ThrottledLog throttledLog)
         {
             var serialized = JsonSerializer.Serialize(startRequestModel);
             await log.Write($"startRequest.{startRequestModel.RequestKey}.log", serialized);
@@ -109,7 +112,7 @@ namespace XTI_TempLog
         {
             var request = new EndRequestModel
             {
-                RequestKey = startRequestModel.RequestKey,
+                RequestKey = startRequestModel?.RequestKey ?? generateKey(),
                 TimeEnded = clock.Now()
             };
             if (isRequestLogged)
@@ -137,22 +140,29 @@ namespace XTI_TempLog
             var tempEvent = new LogEventModel
             {
                 EventKey = generateKey(),
-                RequestKey = startRequestModel.RequestKey,
+                RequestKey = startRequestModel?.RequestKey ?? generateKey(),
                 TimeOccurred = clock.Now(),
                 Severity = severity.Value,
                 Caption = caption,
                 Message = getExceptionMessage(ex),
                 Detail = ex.StackTrace
             };
-            if (throttledLog.CanLogException())
+            var exceptionThrottledLog = throttledLog;
+            if (exceptionThrottledLog == null)
+            {
+                exceptionThrottledLog = throttledLogs.GetThrottledLog(startRequestModel.Path ?? "");
+            }
+            exceptionThrottledLog.IncrementExceptionCount();
+            tempEvent.ActualCount = exceptionThrottledLog.ExceptionCount;
+            if (exceptionThrottledLog.CanLogException())
             {
                 if (!isRequestLogged)
                 {
-                    await startRequest();
+                    await startRequest(exceptionThrottledLog);
                 }
                 var serialized = JsonSerializer.Serialize(tempEvent);
                 await log.Write($"event.{tempEvent.EventKey}.log", serialized);
-                throttledLog.ExceptionLogged();
+                exceptionThrottledLog.ExceptionLogged();
             }
             return tempEvent;
         }

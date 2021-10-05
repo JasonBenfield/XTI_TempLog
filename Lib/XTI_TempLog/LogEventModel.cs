@@ -12,5 +12,6 @@ namespace XTI_TempLog
         public string Caption { get; set; }
         public string Message { get; set; }
         public string Detail { get; set; }
+        public int ActualCount { get; set; }
     }
 }

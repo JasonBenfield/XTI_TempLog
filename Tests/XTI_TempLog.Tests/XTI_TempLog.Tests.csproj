@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Lib\XTI_TempLog.Extensions\XTI_TempLog.Extensions.csproj" />
     <ProjectReference Include="..\..\Lib\XTI_TempLog.Fakes\XTI_TempLog.Fakes.csproj" />
   </ItemGroup>
 
