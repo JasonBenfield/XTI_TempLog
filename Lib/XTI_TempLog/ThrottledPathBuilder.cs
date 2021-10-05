@@ -4,6 +4,13 @@ namespace XTI_TempLog
 {
     public sealed class ThrottledPathBuilder
     {
+        private readonly ThrottledLogsBuilder builder;
+
+        public ThrottledPathBuilder(ThrottledLogsBuilder builder)
+        {
+            this.builder = builder;
+        }
+
         private string path;
 
         public string Path() => path;
@@ -24,13 +31,16 @@ namespace XTI_TempLog
         public ThrottledIntervalBuilder Exceptions()
             => new ThrottledIntervalBuilder(this, (b, ts) => exceptionInterval = ts);
 
-        public ThrottledPath Build()
+        internal ThrottledPath Build()
             => new ThrottledPath
             (
                 path,
                 (int)requestInterval.TotalMilliseconds,
                 (int)exceptionInterval.TotalMilliseconds
             );
+
+        public ThrottledPathBuilder AndThrottle(string path)
+            => builder.Throttle(path);
     }
 
     public sealed class ThrottledIntervalBuilder
