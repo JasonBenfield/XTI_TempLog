@@ -23,13 +23,9 @@ namespace XTI_TempLog
 
         public void IncrementRequestCount() => RequestCount++;
 
-        public void ResetRequestCount() => RequestCount = 0;
-
         public int ExceptionCount { get; private set; }
 
         public void IncrementExceptionCount() => ExceptionCount++;
-
-        public void ResetExceptionCount() => ExceptionCount = 0;
 
         public bool CanLogRequest()
         {
@@ -42,7 +38,11 @@ namespace XTI_TempLog
             return true;
         }
 
-        public void RequestLogged() => timeLastRequestLogged = clock.Now();
+        public void RequestLogged()
+        {
+            timeLastRequestLogged = clock.Now();
+            RequestCount = 0;
+        }
 
         public bool CanLogException()
         {
@@ -55,7 +55,11 @@ namespace XTI_TempLog
             return true;
         }
 
-        public void ExceptionLogged() => timeLastExceptionLogged = clock.Now();
+        public void ExceptionLogged()
+        {
+            timeLastExceptionLogged = clock.Now();
+            ExceptionCount = 0;
+        }
 
     }
 

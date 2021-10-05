@@ -18,7 +18,7 @@ namespace XTI_TempLog
         public ThrottledPathBuilder Throttle(string path)
         {
             throttles.RemoveAll(t => t.Path().Equals(path, StringComparison.OrdinalIgnoreCase));
-            var throttle = new ThrottledPathBuilder().Path(path);
+            var throttle = new ThrottledPathBuilder(this).Path(path);
             throttles.Add(throttle);
             return throttle;
         }
