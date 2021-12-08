@@ -1,10 +1,7 @@
-﻿using System;
+﻿namespace XTI_TempLog.Abstractions;
 
-namespace XTI_TempLog.Abstractions
+public interface IEndRequestModel
 {
-    public interface IEndRequestModel
-    {
-        string RequestKey { get; set; }
-        DateTimeOffset TimeEnded { get; set; }
-    }
+    string RequestKey { get; set; }
+    DateTimeOffset TimeEnded { get; set; }
 }

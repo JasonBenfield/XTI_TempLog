@@ -2,7 +2,7 @@
 
 namespace XTI_TempLog.Fakes
 {
-    public sealed class FakeTempLogs : TempLogs
+    public sealed class FakeTempLogs : ITempLogs
     {
         private readonly List<TempLog> tempLogs = new List<TempLog>();
 

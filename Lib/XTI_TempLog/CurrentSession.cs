@@ -1,7 +1,12 @@
-﻿namespace XTI_TempLog
+﻿namespace XTI_TempLog;
+
+public sealed class CurrentSession
 {
-    public sealed class CurrentSession
+    private string sessionKey = "";
+
+    public string SessionKey
     {
-        public string SessionKey { get; set; } = "";
+        get => sessionKey;
+        set => sessionKey = value ?? "";
     }
 }

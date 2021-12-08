@@ -2,17 +2,16 @@
 using Microsoft.Extensions.Options;
 using XTI_Core.Fakes;
 
-namespace XTI_TempLog.Fakes
+namespace XTI_TempLog.Fakes;
+
+public static class FakeExtensions
 {
-    public static class FakeExtensions
+    public static void AddFakeTempLogServices(this IServiceCollection services)
     {
-        public static void AddFakeTempLogServices(this IServiceCollection services)
-        {
-            services.AddSingleton<CurrentSession>();
-            services.AddSingleton<TempLog, FakeTempLog>();
-            services.AddSingleton<IOptions<TempLogOptions>, FakeOptions<TempLogOptions>>();
-            services.AddSingleton<ThrottledLogs>();
-            services.AddScoped<TempLogSession>();
-        }
+        services.AddSingleton<CurrentSession>();
+        services.AddSingleton<TempLog, FakeTempLog>();
+        services.AddSingleton<IOptions<TempLogOptions>, FakeOptions<TempLogOptions>>();
+        services.AddSingleton<ThrottledLogs>();
+        services.AddScoped<TempLogSession>();
     }
 }

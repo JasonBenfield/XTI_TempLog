@@ -1,10 +1,21 @@
 ﻿using XTI_TempLog.Abstractions;
 
-namespace XTI_TempLog
+namespace XTI_TempLog;
+
+public sealed class AuthenticateSessionModel : IAuthenticateSessionModel
 {
-    public sealed class AuthenticateSessionModel : IAuthenticateSessionModel
+    private string sessionKey = "";
+    private string userName = "";
+
+    public string SessionKey
     {
-        public string SessionKey { get; set; }
-        public string UserName { get; set; }
+        get => sessionKey;
+        set => sessionKey = value ?? "";
+    }
+
+    public string UserName
+    {
+        get => userName;
+        set => userName = value ?? "";
     }
 }
