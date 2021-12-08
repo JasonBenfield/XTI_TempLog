@@ -1,10 +1,7 @@
-﻿using System;
+﻿namespace XTI_TempLog.Abstractions;
 
-namespace XTI_TempLog.Abstractions
+public interface IEndSessionModel
 {
-    public interface IEndSessionModel
-    {
-        string SessionKey { get; set; }
-        DateTimeOffset TimeEnded { get; set; }
-    }
+    string SessionKey { get; set; }
+    DateTimeOffset TimeEnded { get; set; }
 }

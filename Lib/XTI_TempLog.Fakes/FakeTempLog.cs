@@ -1,75 +1,72 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using XTI_Core;
 
-namespace XTI_TempLog.Fakes
+namespace XTI_TempLog.Fakes;
+
+public sealed class FakeTempLog : TempLog
 {
-    public sealed class FakeTempLog : TempLog
+    private readonly Dictionary<string, FakeTempLogFile> files = new Dictionary<string, FakeTempLogFile>();
+    private readonly IClock clock;
+    private bool writeToConsole;
+
+    public FakeTempLog(IClock clock)
     {
-        private readonly Dictionary<string, FakeTempLogFile> files = new Dictionary<string, FakeTempLogFile>();
-        private readonly Clock clock;
-        private bool writeToConsole;
+        this.clock = clock;
+    }
 
-        public FakeTempLog(Clock clock)
+    public void WriteToConsole()
+    {
+        writeToConsole = true;
+        foreach (var file in files.Values)
         {
-            this.clock = clock;
+            file.WriteToConsole();
         }
+    }
 
-        public void WriteToConsole()
+    public string[] Files() => files.Keys.ToArray();
+
+    protected override ITempLogFile CreateFile(string name)
+    {
+        var key = getLookupKey(name);
+        if (!files.TryGetValue(key, out var file))
         {
-            writeToConsole = true;
-            foreach (var file in files.Values)
+            var lastModified = clock.Now();
+            file = new FakeTempLogFile(name, lastModified);
+            if (writeToConsole)
             {
                 file.WriteToConsole();
             }
+            addFile(key, file);
         }
-
-        public string[] Files() => files.Keys.ToArray();
-
-        protected override ITempLogFile CreateFile(string name)
-        {
-            var key = getLookupKey(name);
-            if (!files.TryGetValue(key, out var file))
-            {
-                var lastModified = clock.Now();
-                file = new FakeTempLogFile(name, lastModified);
-                if (writeToConsole)
-                {
-                    file.WriteToConsole();
-                }
-                addFile(key, file);
-            }
-            return file;
-        }
-
-        private void File_Renamed(object sender, RenamedEventArgs e)
-        {
-            files.Remove(getLookupKey(e.OldFile.Name));
-            var key = getLookupKey(e.NewFile.Name);
-            addFile(key, e.NewFile);
-        }
-
-        private void addFile(string key, FakeTempLogFile file)
-        {
-            file.Renamed += File_Renamed;
-            file.Deleted += File_Deleted;
-            files.Add(key, file);
-        }
-
-        private void File_Deleted(object sender, System.EventArgs e)
-        {
-            var file = (FakeTempLogFile)sender;
-            files.Remove(getLookupKey(file.Name));
-        }
-
-        private static string getLookupKey(string name) => name.ToLower();
-
-        protected override IEnumerable<string> FileNames(string pattern)
-            => files.Keys.Where
-            (
-                key => new Regex($"^{pattern.Replace("*", ".*")}$", RegexOptions.IgnoreCase).IsMatch(key)
-            )
-            .ToArray();
+        return file;
     }
+
+    private void File_Renamed(object? sender, RenamedEventArgs e)
+    {
+        files.Remove(getLookupKey(e.OldFile.Name));
+        var key = getLookupKey(e.NewFile.Name);
+        addFile(key, e.NewFile);
+    }
+
+    private void addFile(string key, FakeTempLogFile file)
+    {
+        file.Renamed += File_Renamed;
+        file.Deleted += File_Deleted;
+        files.Add(key, file);
+    }
+
+    private void File_Deleted(object? sender, EventArgs e)
+    {
+        var file = (FakeTempLogFile?)sender;
+        files.Remove(getLookupKey(file?.Name ?? ""));
+    }
+
+    private static string getLookupKey(string name) => name.ToLower();
+
+    protected override IEnumerable<string> FileNames(string pattern)
+        => files.Keys.Where
+        (
+            key => new Regex($"^{pattern.Replace("*", ".*")}$", RegexOptions.IgnoreCase).IsMatch(key)
+        )
+        .ToArray();
 }

@@ -1,11 +1,16 @@
-﻿using System;
-using XTI_TempLog.Abstractions;
+﻿using XTI_TempLog.Abstractions;
 
-namespace XTI_TempLog
+namespace XTI_TempLog;
+
+public sealed class EndRequestModel : IEndRequestModel
 {
-    public sealed class EndRequestModel : IEndRequestModel
+    private string requestKey = "";
+
+    public string RequestKey
     {
-        public string RequestKey { get; set; }
-        public DateTimeOffset TimeEnded { get; set; }
+        get => requestKey;
+        set => requestKey = value ?? "";
     }
+
+    public DateTimeOffset TimeEnded { get; set; }
 }

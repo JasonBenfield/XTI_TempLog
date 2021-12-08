@@ -1,9 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿namespace XTI_TempLog;
 
-namespace XTI_TempLog
+public interface IAppEnvironmentContext
 {
-    public interface IAppEnvironmentContext
-    {
-        Task<AppEnvironment> Value();
-    }
+    Task<AppEnvironment> Value();
 }

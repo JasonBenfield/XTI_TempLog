@@ -1,8 +1,7 @@
-﻿namespace XTI_TempLog.Abstractions
+﻿namespace XTI_TempLog.Abstractions;
+
+public interface IAuthenticateSessionModel
 {
-    public interface IAuthenticateSessionModel
-    {
-        string SessionKey { get; set; }
-        string UserName { get; set; }
-    }
+    string SessionKey { get; set; }
+    string UserName { get; set; }
 }

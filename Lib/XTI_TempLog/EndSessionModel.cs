@@ -1,11 +1,16 @@
-﻿using System;
-using XTI_TempLog.Abstractions;
+﻿using XTI_TempLog.Abstractions;
 
-namespace XTI_TempLog
+namespace XTI_TempLog;
+
+public sealed class EndSessionModel : IEndSessionModel
 {
-    public sealed class EndSessionModel : IEndSessionModel
+    private string sessionKey = "";
+
+    public string SessionKey
     {
-        public string SessionKey { get; set; }
-        public DateTimeOffset TimeEnded { get; set; }
+        get => sessionKey;
+        set => sessionKey = value ?? "";
     }
+
+    public DateTimeOffset TimeEnded { get; set; }
 }
