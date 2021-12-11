@@ -58,6 +58,7 @@ public sealed class ThrottledTempLogSessionTest
         var tempLog = services.GetRequiredService<TempLog>();
         var startRequestFiles = tempLog.StartRequestFiles(clock.Now()).ToArray();
         var startRequests = await deserializeStartRequestFiles(startRequestFiles);
+        startRequests = startRequests.OrderBy(r => r.TimeStarted).ToArray();
         Assert.That(startRequests[0].ActualCount, Is.EqualTo(1), "Should count the logged request");
         Assert.That(startRequests[1].ActualCount, Is.EqualTo(2), "Should count the throttled request");
     }

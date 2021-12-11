@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using System.Collections.Concurrent;
 using XTI_Core;
 
 namespace XTI_TempLog;
@@ -7,7 +8,7 @@ public sealed class ThrottledLogs
 {
     private readonly IClock clock;
     private readonly ThrottledPath[] throttles;
-    private readonly Dictionary<string, ThrottledLog> throttledLogs = new Dictionary<string, ThrottledLog>();
+    private readonly ConcurrentDictionary<string, ThrottledLog> throttledLogs = new ConcurrentDictionary<string, ThrottledLog>();
 
     public ThrottledLogs(IClock clock, IOptions<TempLogOptions> options)
     {
@@ -32,7 +33,7 @@ public sealed class ThrottledLogs
                 .FirstOrDefault(t => t.IsForPath(path))
                 ?? new ThrottledPath(new TempLogThrottleOptions { Path = path });
             throttledLog = new ThrottledLog(throttle, clock);
-            throttledLogs.Add(path, throttledLog);
+            throttledLogs.TryAdd(path, throttledLog);
         }
         return throttledLog;
     }
