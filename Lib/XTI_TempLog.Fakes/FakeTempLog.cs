@@ -1,11 +1,12 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 using XTI_Core;
 
 namespace XTI_TempLog.Fakes;
 
 public sealed class FakeTempLog : TempLog
 {
-    private readonly Dictionary<string, FakeTempLogFile> files = new Dictionary<string, FakeTempLogFile>();
+    private readonly ConcurrentDictionary<string, FakeTempLogFile> files = new ConcurrentDictionary<string, FakeTempLogFile>();
     private readonly IClock clock;
     private bool writeToConsole;
 
@@ -43,7 +44,7 @@ public sealed class FakeTempLog : TempLog
 
     private void File_Renamed(object? sender, RenamedEventArgs e)
     {
-        files.Remove(getLookupKey(e.OldFile.Name));
+        files.TryRemove(getLookupKey(e.OldFile.Name), out var _);
         var key = getLookupKey(e.NewFile.Name);
         addFile(key, e.NewFile);
     }
@@ -52,13 +53,13 @@ public sealed class FakeTempLog : TempLog
     {
         file.Renamed += File_Renamed;
         file.Deleted += File_Deleted;
-        files.Add(key, file);
+        files.TryAdd(key, file);
     }
 
     private void File_Deleted(object? sender, EventArgs e)
     {
         var file = (FakeTempLogFile?)sender;
-        files.Remove(getLookupKey(file?.Name ?? ""));
+        files.TryRemove(getLookupKey(file?.Name ?? ""), out var _);
     }
 
     private static string getLookupKey(string name) => name.ToLower();
