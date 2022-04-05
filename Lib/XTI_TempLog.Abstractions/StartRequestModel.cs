@@ -1,8 +1,6 @@
-﻿using XTI_TempLog.Abstractions;
+﻿namespace XTI_TempLog.Abstractions;
 
-namespace XTI_TempLog;
-
-public sealed class StartRequestModel : IStartRequestModel
+public sealed class StartRequestModel 
 {
     public string RequestKey { get; set; } = "";
     public string SessionKey { get; set; } = "";

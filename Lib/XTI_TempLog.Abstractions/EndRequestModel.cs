@@ -1,8 +1,6 @@
-﻿using XTI_TempLog.Abstractions;
+﻿namespace XTI_TempLog.Abstractions;
 
-namespace XTI_TempLog;
-
-public sealed class EndRequestModel : IEndRequestModel
+public sealed class EndRequestModel
 {
     private string requestKey = "";
 

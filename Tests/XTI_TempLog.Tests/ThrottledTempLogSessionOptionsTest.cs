@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using NUnit.Framework;
 using XTI_Core;
+using XTI_Core.Extensions;
 using XTI_Core.Fakes;
 using XTI_TempLog.Fakes;
 
@@ -17,12 +16,12 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         var throttleInterval = TimeSpan.FromMinutes(1);
         var throttles = new[]
         {
-                new TempLogThrottleOptions
-                {
-                    Path = path,
-                    ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
-                }
-            };
+            new TempLogThrottleOptions
+            {
+                Path = path,
+                ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
+            }
+        };
         var services = setup(throttles);
         var tempLogSession = services.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
@@ -43,12 +42,12 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         var throttleInterval = TimeSpan.FromMinutes(1);
         var throttles = new[]
         {
-                new TempLogThrottleOptions
-                {
-                    Path = path,
-                    ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
-                }
-            };
+            new TempLogThrottleOptions
+            {
+                Path = path,
+                ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
+            }
+        };
         var services = setup(throttles);
         var tempLogSession = services.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
@@ -69,12 +68,12 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         var throttleInterval = TimeSpan.FromMinutes(1);
         var throttles = new[]
         {
-                new TempLogThrottleOptions
-                {
-                    Path = "group1/action\\d+$",
-                    ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
-                }
-            };
+            new TempLogThrottleOptions
+            {
+                Path = "group1/action\\d+$",
+                ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
+            }
+        };
         var services = setup(throttles);
         var tempLogSession = services.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
@@ -95,12 +94,12 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         var throttleInterval = TimeSpan.FromMinutes(1);
         var throttles = new[]
         {
-                new TempLogThrottleOptions
-                {
-                    Path = path,
-                    ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
-                }
-            };
+            new TempLogThrottleOptions
+            {
+                Path = path,
+                ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
+            }
+        };
         var services = setup(throttles);
         var tempLogSession = services.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
@@ -121,12 +120,12 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         var throttleInterval = TimeSpan.FromMinutes(1);
         var throttles = new[]
         {
-                new TempLogThrottleOptions
-                {
-                    Path = "group1/action1",
-                    ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
-                }
-            };
+            new TempLogThrottleOptions
+            {
+                Path = "group1/action1",
+                ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
+            }
+        };
         var services = setup(throttles);
         var anotherPath = "group1/action2";
         var tempLogSession = services.GetRequiredService<TempLogSession>();
@@ -148,12 +147,12 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         var throttleInterval = TimeSpan.FromMinutes(1);
         var throttles = new[]
         {
-                new TempLogThrottleOptions
-                {
-                    Path = path,
-                    ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
-                }
-            };
+            new TempLogThrottleOptions
+            {
+                Path = path,
+                ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
+            }
+        };
         var services = setup(throttles);
         var tempLogSession = services.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
@@ -178,12 +177,12 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         var path = "group1/action1";
         var throttles = new[]
         {
-                new TempLogThrottleOptions
-                {
-                    Path = path,
-                    ThrottleExceptionInterval = (int)throttleInterval.TotalMilliseconds
-                }
-            };
+            new TempLogThrottleOptions
+            {
+                Path = path,
+                ThrottleExceptionInterval = (int)throttleInterval.TotalMilliseconds
+            }
+        };
         var services = setup(throttles);
         var tempLogSession = services.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
@@ -207,12 +206,12 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         var throttleInterval = TimeSpan.FromMinutes(1);
         var throttles = new[]
         {
-                new TempLogThrottleOptions
-                {
-                    Path = path,
-                    ThrottleExceptionInterval = (int)throttleInterval.TotalMilliseconds
-                }
-            };
+            new TempLogThrottleOptions
+            {
+                Path = path,
+                ThrottleExceptionInterval = (int)throttleInterval.TotalMilliseconds
+            }
+        };
         var services = setup(throttles);
         var tempLogSession = services.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
@@ -240,12 +239,12 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         var path = "group1/action1";
         var throttles = new[]
         {
-                new TempLogThrottleOptions
-                {
-                    Path = path,
-                    ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
-                }
-            };
+            new TempLogThrottleOptions
+            {
+                Path = path,
+                ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
+            }
+        };
         var services = setup(throttles);
         var tempLogSession = services.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
@@ -268,12 +267,12 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         var path = "group1/action1";
         var throttles = new[]
         {
-                new TempLogThrottleOptions
-                {
-                    Path = path,
-                    ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
-                }
-            };
+            new TempLogThrottleOptions
+            {
+                Path = path,
+                ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
+            }
+        };
         var services = setup(throttles);
         var tempLogSession = services.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
@@ -308,27 +307,21 @@ internal sealed class ThrottledTempLogSessionOptionsTest
 
     private IServiceProvider setup(IEnumerable<TempLogThrottleOptions> throttles)
     {
-        Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Test");
-        var host = Host.CreateDefaultBuilder()
-            .ConfigureServices
+        var hostBuilder = new XtiHostBuilder();
+        hostBuilder.Services.AddFakeTempLogServices();
+        hostBuilder.Services.AddSingleton<IClock, FakeClock>();
+        hostBuilder.Services.AddScoped<IAppEnvironmentContext>(sp => new FakeAppEnvironmentContext
+        {
+            Environment = new AppEnvironment
             (
-                services =>
-                {
-                    services.AddFakeTempLogServices();
-                    services.AddSingleton<IClock, FakeClock>();
-                    services.AddScoped<IAppEnvironmentContext>(sp => new FakeAppEnvironmentContext
-                    {
-                        Environment = new AppEnvironment
-                        (
-                            "test.user", "my-computer", "10.1.0.0", "Windows 10", "WebApp"
-                        )
-                    });
-                }
+                "test.user", "my-computer", "10.1.0.0", "Windows 10", "WebApp"
             )
-            .Build();
-        var scope = host.Services.CreateScope();
-        var options = scope.ServiceProvider.GetRequiredService<IOptions<TempLogOptions>>();
-        options.Value.Throttles = throttles.ToArray();
-        return scope.ServiceProvider;
+        });
+        var host = hostBuilder.Build();
+        var env = host.GetRequiredService<XtiEnvironmentAccessor>();
+        env.UseTest();
+        var options = host.GetRequiredService<TempLogOptions>();
+        options.Throttles = throttles.ToArray();
+        return host.Scope();
     }
 }

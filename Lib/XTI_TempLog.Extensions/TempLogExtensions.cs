@@ -1,16 +1,15 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using XTI_Core;
+using XTI_Core.Extensions;
 
 namespace XTI_TempLog.Extensions;
 
 public static class TempLogExtensions
 {
-    public static void AddTempLogServices(this IServiceCollection services, IConfiguration configuration)
+    public static void AddTempLogServices(this IServiceCollection services)
     {
-        services.Configure<TempLogOptions>(configuration.GetSection(TempLogOptions.TempLog));
+        services.AddConfigurationOptions<TempLogOptions>(TempLogOptions.TempLog);
         services.AddThrottledLog((sp, b) => { });
         services.AddScoped<TempLog>(sp =>
         {
@@ -30,14 +29,14 @@ public static class TempLogExtensions
         {
             services.Remove(serviceDescriptor);
         }
-        services.AddSingleton
+        services.AddScoped
         (
             sp =>
             {
                 var clock = sp.GetRequiredService<IClock>();
                 var builder = new ThrottledLogsBuilder(clock);
                 action(sp, builder);
-                var options = sp.GetRequiredService<IOptions<TempLogOptions>>().Value;
+                var options = sp.GetRequiredService<TempLogOptions>();
                 builder.ApplyOptions(options);
                 return builder.Build();
             }

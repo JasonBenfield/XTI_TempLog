@@ -1,9 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using NUnit.Framework;
 using System.Text.Json;
 using XTI_Core;
+using XTI_Core.Extensions;
 using XTI_Secrets.Extensions;
+using XTI_TempLog.Abstractions;
 using XTI_TempLog.Extensions;
 
 namespace XTI_TempLog.IntegrationTests;
@@ -113,30 +114,23 @@ internal sealed class TempSessionContextTest
 
     private IServiceProvider setup()
     {
-        var host = Host.CreateDefaultBuilder()
-            .ConfigureServices
-            (
-                (hostContext, services) =>
-                {
-                    services.AddScoped<IClock, UtcClock>();
-                    services.AddScoped<IAppEnvironmentContext, TestAppEnvironmentContext>();
-                    services.AddSingleton<CurrentSession>();
-                    services.AddSingleton<XtiFolder>();
-                    services.AddSingleton
-                    (
-                        sp =>
-                            sp.GetRequiredService<XtiFolder>()
-                                .SharedAppDataFolder()
-                                .WithSubFolder("TestTempLog")
-                    );
-                    services.AddXtiDataProtection(hostContext.HostingEnvironment);
-                    services.AddTempLogServices(hostContext.Configuration);
-                }
-            )
-            .Build();
-        var scope = host.Services.CreateScope();
-        deleteTempLogFolder(scope.ServiceProvider.GetRequiredService<AppDataFolder>());
-        return scope.ServiceProvider;
+        var hostBuilder = new XtiHostBuilder();
+        hostBuilder.Services.AddScoped<IClock, UtcClock>();
+        hostBuilder.Services.AddScoped<IAppEnvironmentContext, TestAppEnvironmentContext>();
+        hostBuilder.Services.AddSingleton<CurrentSession>();
+        hostBuilder.Services.AddSingleton<XtiFolder>();
+        hostBuilder.Services.AddSingleton
+        (
+            sp =>
+                sp.GetRequiredService<XtiFolder>()
+                    .SharedAppDataFolder()
+                    .WithSubFolder("TestTempLog")
+        );
+        hostBuilder.Services.AddXtiDataProtection();
+        hostBuilder.Services.AddTempLogServices();
+        var host = hostBuilder.Build();
+        deleteTempLogFolder(host.GetRequiredService<AppDataFolder>());
+        return host.Scope();
     }
 
     private void deleteTempLogFolder(AppDataFolder appDataFolder)

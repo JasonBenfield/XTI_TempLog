@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using NUnit.Framework;
 using XTI_Core;
+using XTI_Core.Extensions;
 using XTI_Core.Fakes;
+using XTI_TempLog.Abstractions;
 using XTI_TempLog.Fakes;
 
 namespace XTI_TempLog.Tests;
@@ -189,26 +190,20 @@ internal sealed class TempLogSessionTest
 
     private IServiceProvider setup()
     {
-        Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Test");
-        var host = Host.CreateDefaultBuilder()
-            .ConfigureServices
+        var hostBuilder = new XtiHostBuilder();
+        hostBuilder.Services.AddFakeTempLogServices();
+        hostBuilder.Services.AddSingleton<IClock, FakeClock>();
+        hostBuilder.Services.AddScoped<IAppEnvironmentContext>(sp => new FakeAppEnvironmentContext
+        {
+            Environment = new AppEnvironment
             (
-                services =>
-                {
-                    services.AddFakeTempLogServices();
-                    services.AddSingleton<IClock, FakeClock>();
-                    services.AddScoped<IAppEnvironmentContext>(sp => new FakeAppEnvironmentContext
-                    {
-                        Environment = new AppEnvironment
-                        (
-                            "test.user", "my-computer", "10.1.0.0", "Windows 10", "WebApp"
-                        )
-                    });
-                }
+                "test.user", "my-computer", "10.1.0.0", "Windows 10", "WebApp"
             )
-            .Build();
-        var scope = host.Services.CreateScope();
-        return scope.ServiceProvider;
+        });
+        var host = hostBuilder.Build();
+        var env = host.GetRequiredService<XtiEnvironmentAccessor>();
+        env.UseTest();
+        return host.Scope();
     }
 
     private TempLogSession getTempLogSession(IServiceProvider sp)

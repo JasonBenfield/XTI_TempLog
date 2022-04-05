@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using NUnit.Framework;
 using XTI_Core;
+using XTI_Core.Extensions;
 using XTI_Core.Fakes;
+using XTI_TempLog.Abstractions;
 using XTI_TempLog.Extensions;
 using XTI_TempLog.Fakes;
 
@@ -315,7 +316,7 @@ public sealed class ThrottledTempLogSessionTest
             var serialized = await file.Read();
             eventModels.Add(XtiSerializer.Deserialize<LogEventModel>(serialized));
         }
-        return eventModels.ToArray();
+        return eventModels.OrderBy(e => e.TimeOccurred).ToArray();
     }
 
     [Test]
@@ -442,26 +443,20 @@ public sealed class ThrottledTempLogSessionTest
 
     private IServiceProvider setup(Action<IServiceProvider, ThrottledLogsBuilder> buildThrottledLogs)
     {
-        Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Test");
-        var host = Host.CreateDefaultBuilder()
-            .ConfigureServices
+        var hostBuilder = new XtiHostBuilder();
+        hostBuilder.Services.AddFakeTempLogServices();
+        hostBuilder.Services.AddThrottledLog(buildThrottledLogs);
+        hostBuilder.Services.AddSingleton<IClock, FakeClock>();
+        hostBuilder.Services.AddScoped<IAppEnvironmentContext>(sp => new FakeAppEnvironmentContext
+        {
+            Environment = new AppEnvironment
             (
-                services =>
-                {
-                    services.AddFakeTempLogServices();
-                    services.AddThrottledLog(buildThrottledLogs);
-                    services.AddSingleton<IClock, FakeClock>();
-                    services.AddScoped<IAppEnvironmentContext>(sp => new FakeAppEnvironmentContext
-                    {
-                        Environment = new AppEnvironment
-                        (
-                            "test.user", "my-computer", "10.1.0.0", "Windows 10", "WebApp"
-                        )
-                    });
-                }
+                "test.user", "my-computer", "10.1.0.0", "Windows 10", "WebApp"
             )
-            .Build();
-        var scope = host.Services.CreateScope();
-        return scope.ServiceProvider;
+        });
+        var host = hostBuilder.Build();
+        var env = host.GetRequiredService<XtiEnvironmentAccessor>();
+        env.UseTest();
+        return host.Scope();
     }
 }

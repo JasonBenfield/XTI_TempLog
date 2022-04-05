@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using XTI_Core;
+using XTI_TempLog.Abstractions;
 
 namespace XTI_TempLog;
 
