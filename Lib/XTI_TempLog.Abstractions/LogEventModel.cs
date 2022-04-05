@@ -1,8 +1,6 @@
-﻿using XTI_TempLog.Abstractions;
+﻿namespace XTI_TempLog.Abstractions;
 
-namespace XTI_TempLog;
-
-public sealed class LogEventModel : ILogEventModel
+public sealed class LogEventModel
 {
     private string eventKey = "";
     private string requestKey = "";

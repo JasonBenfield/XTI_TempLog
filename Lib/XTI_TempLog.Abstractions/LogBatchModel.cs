@@ -1,8 +1,6 @@
-﻿using XTI_TempLog.Abstractions;
+﻿namespace XTI_TempLog.Abstractions;
 
-namespace XTI_TempLog;
-
-public sealed class LogBatchModel : ILogBatchModel
+public sealed class LogBatchModel
 {
     private StartSessionModel[] startSessions = new StartSessionModel[0];
     private StartRequestModel[] startRequests = new StartRequestModel[0];
@@ -45,36 +43,5 @@ public sealed class LogBatchModel : ILogBatchModel
     {
         get => endSessions;
         set => endSessions = value ?? new EndSessionModel[0];
-    }
-
-    IAuthenticateSessionModel[] ILogBatchModel.AuthenticateSessions
-    {
-        get => AuthenticateSessions;
-        set => AuthenticateSessions = (value ?? new AuthenticateSessionModel[] { }).Cast<AuthenticateSessionModel>().ToArray();
-    }
-    IEndRequestModel[] ILogBatchModel.EndRequests
-    {
-        get => EndRequests;
-        set => EndRequests = (value ?? new EndRequestModel[] { }).Cast<EndRequestModel>().ToArray();
-    }
-    ILogEventModel[] ILogBatchModel.LogEvents
-    {
-        get => LogEvents;
-        set => LogEvents = (value ?? new LogEventModel[] { }).Cast<LogEventModel>().ToArray();
-    }
-    IStartRequestModel[] ILogBatchModel.StartRequests
-    {
-        get => StartRequests;
-        set => StartRequests = (value ?? new StartRequestModel[] { }).Cast<StartRequestModel>().ToArray();
-    }
-    IStartSessionModel[] ILogBatchModel.StartSessions
-    {
-        get => StartSessions;
-        set => StartSessions = (value ?? new StartSessionModel[] { }).Cast<StartSessionModel>().ToArray();
-    }
-    IEndSessionModel[] ILogBatchModel.EndSessions
-    {
-        get => EndSessions;
-        set => EndSessions = (value ?? new EndSessionModel[] { }).Cast<EndSessionModel>().ToArray();
     }
 }

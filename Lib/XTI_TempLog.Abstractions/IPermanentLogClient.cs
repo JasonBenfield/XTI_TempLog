@@ -2,5 +2,5 @@
 
 public interface IPermanentLogClient
 {
-    Task LogBatch(ILogBatchModel model);
+    Task LogBatch(LogBatchModel model);
 }

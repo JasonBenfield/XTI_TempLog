@@ -1,8 +1,6 @@
-﻿using XTI_TempLog.Abstractions;
+﻿namespace XTI_TempLog.Abstractions;
 
-namespace XTI_TempLog;
-
-public sealed class EndSessionModel : IEndSessionModel
+public sealed class EndSessionModel 
 {
     private string sessionKey = "";
 
