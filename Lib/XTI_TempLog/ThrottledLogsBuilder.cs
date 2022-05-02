@@ -5,7 +5,7 @@ namespace XTI_TempLog;
 public sealed class ThrottledLogsBuilder
 {
     private readonly IClock clock;
-    private readonly List<ThrottledPathBuilder> throttles = new List<ThrottledPathBuilder>();
+    private readonly List<ThrottledPathBuilder> throttles = new();
 
     public ThrottledLogsBuilder(IClock clock)
     {

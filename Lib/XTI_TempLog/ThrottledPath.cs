@@ -27,4 +27,6 @@ public sealed class ThrottledPath
     public int ThrottleExceptionInterval { get; }
 
     public bool IsForPath(string path) => pathRegex.IsMatch(path);
+
+    internal string Format() => pathRegex.ToString();
 }

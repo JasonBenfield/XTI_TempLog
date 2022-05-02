@@ -443,7 +443,9 @@ public sealed class ThrottledTempLogSessionTest
 
     private IServiceProvider setup(Action<IServiceProvider, ThrottledLogsBuilder> buildThrottledLogs)
     {
+        Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Test");
         var hostBuilder = new XtiHostBuilder();
+        hostBuilder.Services.AddMemoryCache();
         hostBuilder.Services.AddFakeTempLogServices();
         hostBuilder.Services.AddThrottledLog(buildThrottledLogs);
         hostBuilder.Services.AddSingleton<IClock, FakeClock>();
@@ -455,8 +457,6 @@ public sealed class ThrottledTempLogSessionTest
             )
         });
         var host = hostBuilder.Build();
-        var env = host.GetRequiredService<XtiEnvironmentAccessor>();
-        env.UseTest();
         return host.Scope();
     }
 }

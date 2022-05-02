@@ -29,7 +29,7 @@ public static class TempLogExtensions
         {
             services.Remove(serviceDescriptor);
         }
-        services.AddScoped
+        services.AddSingleton
         (
             sp =>
             {

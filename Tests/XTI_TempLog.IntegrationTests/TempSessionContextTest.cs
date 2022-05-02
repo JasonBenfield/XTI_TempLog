@@ -115,6 +115,7 @@ internal sealed class TempSessionContextTest
     private IServiceProvider setup()
     {
         var hostBuilder = new XtiHostBuilder();
+        hostBuilder.Services.AddMemoryCache();
         hostBuilder.Services.AddScoped<IClock, UtcClock>();
         hostBuilder.Services.AddScoped<IAppEnvironmentContext, TestAppEnvironmentContext>();
         hostBuilder.Services.AddSingleton<CurrentSession>();

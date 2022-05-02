@@ -7,20 +7,12 @@ public sealed class ThrottledLogs
 {
     private readonly IClock clock;
     private readonly ThrottledPath[] throttles;
-    private readonly ConcurrentDictionary<string, ThrottledLog> throttledLogs = new ConcurrentDictionary<string, ThrottledLog>();
+    private readonly ConcurrentDictionary<string, ThrottledLog> throttledLogs = new();
 
-    public ThrottledLogs(IClock clock, TempLogOptions options)
+    internal ThrottledLogs(IClock clock, ThrottledPath[] throttles)
     {
         this.clock = clock;
-        throttles = (options.Throttles ?? new TempLogThrottleOptions[] { })
-            .Select(t => new ThrottledPath(t))
-            .ToArray();
-    }
-
-    public ThrottledLogs(IClock clock, ThrottledPath[] throttles)
-    {
-        this.clock = clock;
-        this.throttles = throttles ?? new ThrottledPath[] { };
+        this.throttles = throttles;
     }
 
     internal ThrottledLog GetThrottledLog(string path)

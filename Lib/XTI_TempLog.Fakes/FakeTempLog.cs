@@ -6,7 +6,7 @@ namespace XTI_TempLog.Fakes;
 
 public sealed class FakeTempLog : TempLog
 {
-    private readonly ConcurrentDictionary<string, FakeTempLogFile> files = new ConcurrentDictionary<string, FakeTempLogFile>();
+    private readonly ConcurrentDictionary<string, FakeTempLogFile> files = new();
     private readonly IClock clock;
     private bool writeToConsole;
 

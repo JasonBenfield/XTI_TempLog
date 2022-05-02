@@ -11,7 +11,9 @@ function Xti-NewVersion {
     param(
         [Parameter(Position=0)]
         [ValidateSet("major", "minor", "patch")]
-        $VersionType = "minor"
+        $VersionType = "minor",
+        [ValidateSet("Default", "DB")]
+        $HubAdministrationType = "Default"
     )
     $script:xtiConfig | New-BaseXtiVersion @PsBoundParameters
 }
