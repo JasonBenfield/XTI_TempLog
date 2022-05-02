@@ -311,6 +311,22 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         var hostBuilder = new XtiHostBuilder();
         hostBuilder.Services.AddMemoryCache();
         hostBuilder.Services.AddFakeTempLogServices();
+        hostBuilder.Services.AddSingleton
+        (
+            _ => new TempLogOptions
+            {
+                Throttles = throttles.ToArray()
+            }
+        );
+        hostBuilder.Services.AddSingleton
+        (
+            sp =>
+            {
+                var builder = new ThrottledLogsBuilder(sp.GetRequiredService<IClock>());
+                builder.ApplyOptions(sp.GetRequiredService<TempLogOptions>());
+                return builder;
+            }
+        );
         hostBuilder.Services.AddSingleton<IClock, FakeClock>();
         hostBuilder.Services.AddScoped<IAppEnvironmentContext>(sp => new FakeAppEnvironmentContext
         {
@@ -320,8 +336,6 @@ internal sealed class ThrottledTempLogSessionOptionsTest
             )
         });
         var host = hostBuilder.Build();
-        var options = host.GetRequiredService<TempLogOptions>();
-        options.Throttles = throttles.ToArray();
         return host.Scope();
     }
 }
