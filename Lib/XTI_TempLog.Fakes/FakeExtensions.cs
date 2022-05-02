@@ -9,7 +9,8 @@ public static class FakeExtensions
         services.AddSingleton<CurrentSession>();
         services.AddSingleton<TempLog, FakeTempLog>();
         services.AddSingleton(_ => new TempLogOptions());
-        services.AddSingleton<ThrottledLogs>();
+        services.AddSingleton<ThrottledLogsBuilder>();
+        services.AddSingleton(sp => sp.GetRequiredService<ThrottledLogsBuilder>().Build());
         services.AddScoped<TempLogSession>();
     }
 }
