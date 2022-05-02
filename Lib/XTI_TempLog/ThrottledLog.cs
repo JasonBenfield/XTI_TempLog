@@ -6,15 +6,14 @@ public sealed class ThrottledLog
 {
     private readonly IClock clock;
     private readonly int throttleLogInterval;
-    private DateTimeOffset timeLastRequestLogged;
     private readonly int throttleExceptionInterval;
-    private DateTimeOffset timeLastExceptionLogged;
+    private DateTimeOffset timeRequestLogged = DateTimeOffset.MinValue;
+    private DateTimeOffset timeExceptionLogged = DateTimeOffset.MinValue;
 
-    public ThrottledLog(ThrottledPath throttledPath, IClock clock)
+    internal ThrottledLog(ThrottledPath throttledPath, IClock clock)
     {
         throttleLogInterval = throttledPath.ThrottleRequestInterval;
         throttleExceptionInterval = throttledPath.ThrottleExceptionInterval;
-        timeLastRequestLogged = DateTimeOffset.MinValue;
         this.clock = clock;
     }
 
@@ -28,10 +27,10 @@ public sealed class ThrottledLog
 
     public bool CanLogRequest()
     {
-        if (throttleLogInterval > 0 && timeLastRequestLogged > DateTimeOffset.MinValue)
+        if (throttleLogInterval > 0 && timeRequestLogged > DateTimeOffset.MinValue)
         {
             var now = clock.Now();
-            var nextLogTime = timeLastRequestLogged.AddMilliseconds(throttleLogInterval);
+            var nextLogTime = timeRequestLogged.AddMilliseconds(throttleLogInterval);
             return now > nextLogTime;
         }
         return true;
@@ -39,16 +38,16 @@ public sealed class ThrottledLog
 
     public void RequestLogged()
     {
-        timeLastRequestLogged = clock.Now();
+        timeRequestLogged = clock.Now();
         RequestCount = 0;
     }
 
     public bool CanLogException()
     {
-        if (throttleExceptionInterval > 0 && timeLastExceptionLogged > DateTimeOffset.MinValue)
+        if (throttleExceptionInterval > 0 && timeExceptionLogged > DateTimeOffset.MinValue)
         {
             var now = clock.Now();
-            var nextLogTime = timeLastExceptionLogged.AddMilliseconds(throttleExceptionInterval);
+            var nextLogTime = timeExceptionLogged.AddMilliseconds(throttleExceptionInterval);
             return now > nextLogTime;
         }
         return true;
@@ -56,8 +55,7 @@ public sealed class ThrottledLog
 
     public void ExceptionLogged()
     {
-        timeLastExceptionLogged = clock.Now();
+        timeExceptionLogged = clock.Now();
         ExceptionCount = 0;
     }
-
 }

@@ -307,7 +307,9 @@ internal sealed class ThrottledTempLogSessionOptionsTest
 
     private IServiceProvider setup(IEnumerable<TempLogThrottleOptions> throttles)
     {
+        Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Test");
         var hostBuilder = new XtiHostBuilder();
+        hostBuilder.Services.AddMemoryCache();
         hostBuilder.Services.AddFakeTempLogServices();
         hostBuilder.Services.AddSingleton<IClock, FakeClock>();
         hostBuilder.Services.AddScoped<IAppEnvironmentContext>(sp => new FakeAppEnvironmentContext
@@ -318,8 +320,6 @@ internal sealed class ThrottledTempLogSessionOptionsTest
             )
         });
         var host = hostBuilder.Build();
-        var env = host.GetRequiredService<XtiEnvironmentAccessor>();
-        env.UseTest();
         var options = host.GetRequiredService<TempLogOptions>();
         options.Throttles = throttles.ToArray();
         return host.Scope();

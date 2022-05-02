@@ -190,7 +190,9 @@ internal sealed class TempLogSessionTest
 
     private IServiceProvider setup()
     {
+        Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Test");
         var hostBuilder = new XtiHostBuilder();
+        hostBuilder.Services.AddMemoryCache();
         hostBuilder.Services.AddFakeTempLogServices();
         hostBuilder.Services.AddSingleton<IClock, FakeClock>();
         hostBuilder.Services.AddScoped<IAppEnvironmentContext>(sp => new FakeAppEnvironmentContext
@@ -201,8 +203,6 @@ internal sealed class TempLogSessionTest
             )
         });
         var host = hostBuilder.Build();
-        var env = host.GetRequiredService<XtiEnvironmentAccessor>();
-        env.UseTest();
         return host.Scope();
     }
 
