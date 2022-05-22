@@ -6,6 +6,4 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 
-	<Import Project="..\\..\\Common.Targets" />
-
 </Project>

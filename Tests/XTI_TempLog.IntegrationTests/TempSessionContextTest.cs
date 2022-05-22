@@ -163,7 +163,7 @@ internal sealed class TempSessionContextTest
         {
             appEnv = new AppEnvironment
             (
-                "test.user", "my-computer", "10.1.0.0", "Windows 10", "WebApp"
+                "test.user", "my-computer", "10.1.0.0", "Windows 10", 123
             );
         }
 

@@ -14,7 +14,7 @@
 		<PackageReference Include="NUnit3TestAdapter" Version="4.1.0" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-		<PackageReference Include="XTI_Secrets.Extensions" Version="1.8.4" />
+		<PackageReference Include="XTI_Secrets.Extensions" Version="1.8.5" />
 	</ItemGroup>
 
 	<ItemGroup>

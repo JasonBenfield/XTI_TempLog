@@ -51,7 +51,7 @@ internal sealed class TempLogSessionTest
         Assert.That(startRequest.TimeStarted, Is.EqualTo(clock.Now()), "Should start session");
         Assert.That(startRequest.Path, Is.EqualTo(path), "Should set path");
         Assert.That(string.IsNullOrWhiteSpace(startRequest.RequestKey), Is.False, "Should set request key");
-        Assert.That(startRequest.AppType, Is.EqualTo("WebApp"), "Should set app key from environment");
+        Assert.That(startRequest.InstallationID, Is.EqualTo(123), "Should set installation ID from environment");
     }
 
     private async Task<StartRequestModel> getSingleStartRequest(IServiceProvider services)
@@ -179,13 +179,13 @@ internal sealed class TempLogSessionTest
         Assert.That(logEvent.TimeOccurred, Is.EqualTo(clock.Now()), "Should set time occurred to the current time");
     }
 
-    private async Task<LogEventModel> getSingleLogEvent(IServiceProvider services)
+    private async Task<LogEntryModel> getSingleLogEvent(IServiceProvider services)
     {
         var tempLog = getTempLog(services);
         var files = tempLog.LogEventFiles(DateTime.Now).ToArray();
         Assert.That(files.Length, Is.EqualTo(1), "Should be one log event file");
         var serializedLogEvent = await files[0].Read();
-        return XtiSerializer.Deserialize<LogEventModel>(serializedLogEvent);
+        return XtiSerializer.Deserialize<LogEntryModel>(serializedLogEvent);
     }
 
     private IServiceProvider setup()
@@ -199,7 +199,7 @@ internal sealed class TempLogSessionTest
         {
             Environment = new AppEnvironment
             (
-                "test.user", "my-computer", "10.1.0.0", "Windows 10", "WebApp"
+                "test.user", "my-computer", "10.1.0.0", "Windows 10", 123
             )
         });
         var host = hostBuilder.Build();

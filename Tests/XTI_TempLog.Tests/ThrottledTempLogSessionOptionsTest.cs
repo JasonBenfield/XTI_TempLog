@@ -332,7 +332,7 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         {
             Environment = new AppEnvironment
             (
-                "test.user", "my-computer", "10.1.0.0", "Windows 10", "WebApp"
+                "test.user", "my-computer", "10.1.0.0", "Windows 10", 123
             )
         });
         var host = hostBuilder.Build();
