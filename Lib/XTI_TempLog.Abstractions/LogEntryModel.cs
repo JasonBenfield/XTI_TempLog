@@ -1,6 +1,6 @@
 ﻿namespace XTI_TempLog.Abstractions;
 
-public sealed class LogEventModel
+public sealed class LogEntryModel
 {
     private string eventKey = "";
     private string requestKey = "";

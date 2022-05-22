@@ -77,7 +77,7 @@ public sealed class TempLogSession
         {
             RequestKey = generateKey(),
             SessionKey = currentSession.SessionKey,
-            AppType = environment.AppType,
+            InstallationID = environment.InstallationID,
             Path = path,
             TimeStarted = clock.Now()
         };
@@ -98,10 +98,15 @@ public sealed class TempLogSession
 
     private async Task startRequest(ThrottledLog throttledLog)
     {
-        var serialized = JsonSerializer.Serialize(startRequestModel);
-        await log.Write($"startRequest.{startRequestModel?.RequestKey}.log", serialized);
+        await startRequest();
         throttledLog.RequestLogged();
         isRequestLogged = true;
+    }
+
+    private async Task startRequest()
+    {
+        var serialized = JsonSerializer.Serialize(startRequestModel);
+        await log.Write($"startRequest.{startRequestModel?.RequestKey}.log", serialized);
     }
 
     private string generateKey() => Guid.NewGuid().ToString("N");
@@ -133,9 +138,28 @@ public sealed class TempLogSession
         return request;
     }
 
-    public async Task<LogEventModel> LogException(AppEventSeverity severity, Exception ex, string caption)
+    public async Task<LogEntryModel> LogInformation(string caption, string message, string details)
     {
-        var tempEvent = new LogEventModel
+        var tempEvent = new LogEntryModel
+        {
+            EventKey = generateKey(),
+            RequestKey = startRequestModel?.RequestKey ?? generateKey(),
+            TimeOccurred = clock.Now(),
+            Severity = AppEventSeverity.Values.Information.Value,
+            Caption = caption,
+            Message = message,
+            Detail = details
+        };
+        if (isRequestLogged)
+        {
+            await WriteLogEntry(tempEvent);
+        }
+        return tempEvent;
+    }
+
+    public async Task<LogEntryModel> LogException(AppEventSeverity severity, Exception ex, string caption)
+    {
+        var tempEvent = new LogEntryModel
         {
             EventKey = generateKey(),
             RequestKey = startRequestModel?.RequestKey ?? generateKey(),
@@ -158,11 +182,16 @@ public sealed class TempLogSession
             {
                 await startRequest(exceptionThrottledLog);
             }
-            var serialized = JsonSerializer.Serialize(tempEvent);
-            await log.Write($"event.{tempEvent.EventKey}.log", serialized);
+            await WriteLogEntry(tempEvent);
             exceptionThrottledLog.ExceptionLogged();
         }
         return tempEvent;
+    }
+
+    private async Task WriteLogEntry(LogEntryModel tempEvent)
+    {
+        var serialized = JsonSerializer.Serialize(tempEvent);
+        await log.Write($"event.{tempEvent.EventKey}.log", serialized);
     }
 
     private string getExceptionMessage(Exception ex)

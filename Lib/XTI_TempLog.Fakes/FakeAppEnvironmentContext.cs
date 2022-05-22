@@ -10,7 +10,7 @@ public sealed class FakeAppEnvironmentContext : IAppEnvironmentContext
             "AppMiddleware",
             "my-computer",
             "Windows 10",
-            "WebApp"
+            123
         );
     }
 

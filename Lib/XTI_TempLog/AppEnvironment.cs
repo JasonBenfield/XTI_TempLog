@@ -8,19 +8,19 @@ public sealed class AppEnvironment
         string requesterKey,
         string remoteAddress,
         string userAgent,
-        string appType
+        int installationID
     )
     {
         UserName = userName;
         RequesterKey = requesterKey;
         RemoteAddress = remoteAddress;
         UserAgent = userAgent;
-        AppType = appType;
+        InstallationID = installationID;
     }
 
     public string UserName { get; }
     public string RequesterKey { get; }
     public string RemoteAddress { get; }
     public string UserAgent { get; }
-    public string AppType { get; }
+    public int InstallationID { get; }
 }

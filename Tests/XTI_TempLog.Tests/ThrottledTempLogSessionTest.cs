@@ -308,13 +308,13 @@ public sealed class ThrottledTempLogSessionTest
         Assert.That(logEventModels[1].ActualCount, Is.EqualTo(2), "Should count the throttled exception");
     }
 
-    private async Task<LogEventModel[]> deserializeEventFiles(ITempLogFile[] files)
+    private async Task<LogEntryModel[]> deserializeEventFiles(ITempLogFile[] files)
     {
-        var eventModels = new List<LogEventModel>();
+        var eventModels = new List<LogEntryModel>();
         foreach (var file in files)
         {
             var serialized = await file.Read();
-            eventModels.Add(XtiSerializer.Deserialize<LogEventModel>(serialized));
+            eventModels.Add(XtiSerializer.Deserialize<LogEntryModel>(serialized));
         }
         return eventModels.OrderBy(e => e.TimeOccurred).ToArray();
     }
@@ -453,7 +453,7 @@ public sealed class ThrottledTempLogSessionTest
         {
             Environment = new AppEnvironment
             (
-                "test.user", "my-computer", "10.1.0.0", "Windows 10", "WebApp"
+                "test.user", "my-computer", "10.1.0.0", "Windows 10", 123
             )
         });
         var host = hostBuilder.Build();
