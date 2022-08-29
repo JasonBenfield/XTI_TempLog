@@ -6,13 +6,29 @@ namespace XTI_TempLog;
 public sealed class ThrottledLogs
 {
     private readonly IClock clock;
-    private readonly ThrottledPath[] throttles;
+    //private readonly ThrottledPath[] throttles;
     private readonly ConcurrentDictionary<string, ThrottledLog> throttledLogs = new();
 
     internal ThrottledLogs(IClock clock, ThrottledPath[] throttles)
     {
         this.clock = clock;
-        this.throttles = throttles;
+        foreach (var throttle in throttles)
+        {
+            throttledLogs.AddOrUpdate
+            (
+                throttle.Path,
+                new ThrottledLog
+                (
+                    new ThrottledPath(throttle.Path, throttle.ThrottleRequestInterval, throttle.ThrottleExceptionInterval),
+                    clock
+                ),
+                (key, tl) => new ThrottledLog
+                (
+                    new ThrottledPath(throttle.Path, throttle.ThrottleRequestInterval, throttle.ThrottleExceptionInterval),
+                    clock
+                )
+            );
+        }
     }
 
     internal ThrottledLog GetThrottledLog(string path)
@@ -20,11 +36,19 @@ public sealed class ThrottledLogs
         path = path?.ToLower().Trim() ?? "";
         if (!throttledLogs.TryGetValue(path, out var throttledLog))
         {
-            var throttle = throttles
-                .FirstOrDefault(t => t.IsForPath(path))
-                ?? new ThrottledPath(new TempLogThrottleOptions { Path = path });
-            throttledLog = new ThrottledLog(throttle, clock);
-            throttledLogs.TryAdd(path, throttledLog);
+            throttledLog = throttledLogs.Values.FirstOrDefault(t => t.IsForPath(path));
+            if (throttledLog == null)
+            {
+                throttledLog = new ThrottledLog
+                (
+                    new ThrottledPath(new TempLogThrottleOptions { Path = path }),
+                    clock
+                );
+            }
+            else
+            {
+                throttledLogs.TryAdd(path, throttledLog);
+            }
         }
         return throttledLog;
     }

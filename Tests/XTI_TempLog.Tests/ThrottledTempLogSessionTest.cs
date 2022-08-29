@@ -14,7 +14,7 @@ public sealed class ThrottledTempLogSessionTest
     [Test]
     public async Task ShouldNotLogStartRequest_WhenMadeBeforeThrottledInterval()
     {
-        var path = "group1/action1";
+        var path = "/group1/action1";
         var throttleInterval = TimeSpan.FromMinutes(1);
         var services = setup
         (
@@ -25,11 +25,11 @@ public sealed class ThrottledTempLogSessionTest
         );
         var tempLogSession = services.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
-        await tempLogSession.StartRequest($"Test/Current/{path}");
+        await tempLogSession.StartRequest($"/Test/Current{path}");
         await tempLogSession.EndRequest();
         var clock = (FakeClock)services.GetRequiredService<IClock>();
         clock.Add(throttleInterval.Subtract(TimeSpan.FromSeconds(1)));
-        await tempLogSession.StartRequest($"Test/Current/{path}");
+        await tempLogSession.StartRequest($"/Test/V8{path}");
         var tempLog = services.GetRequiredService<TempLog>();
         var startRequests = tempLog.StartRequestFiles(clock.Now()).ToArray();
         Assert.That(startRequests.Length, Is.EqualTo(1), "Should not log second start request within the throttle interval");
