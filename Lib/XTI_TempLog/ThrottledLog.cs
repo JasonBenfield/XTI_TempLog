@@ -9,13 +9,17 @@ public sealed class ThrottledLog
     private readonly int throttleExceptionInterval;
     private DateTimeOffset timeRequestLogged = DateTimeOffset.MinValue;
     private DateTimeOffset timeExceptionLogged = DateTimeOffset.MinValue;
+    private readonly ThrottledPath throttledPath;
 
     internal ThrottledLog(ThrottledPath throttledPath, IClock clock)
     {
+        this.throttledPath = throttledPath;
         throttleLogInterval = throttledPath.ThrottleRequestInterval;
         throttleExceptionInterval = throttledPath.ThrottleExceptionInterval;
         this.clock = clock;
     }
+
+    public bool IsForPath(string path) => throttledPath.IsForPath(path);
 
     public int RequestCount { get; private set; }
 

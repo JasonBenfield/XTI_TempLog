@@ -14,6 +14,7 @@ public sealed class ThrottledPath
     public ThrottledPath(string path, int throttleRequestInterval, int throttleExceptionInterval)
     {
         path = path?.Trim() ?? "";
+        Path = path;
         if (path.Contains("/") && !path.Contains("\\/"))
         {
             path = path.Replace("/", "\\/");
@@ -23,6 +24,7 @@ public sealed class ThrottledPath
         ThrottleExceptionInterval = throttleExceptionInterval;
     }
 
+    internal string Path { get; }
     public int ThrottleRequestInterval { get; }
     public int ThrottleExceptionInterval { get; }
 
