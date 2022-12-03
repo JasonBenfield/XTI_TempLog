@@ -6,7 +6,6 @@ namespace XTI_TempLog;
 public sealed class ThrottledLogs
 {
     private readonly IClock clock;
-    //private readonly ThrottledPath[] throttles;
     private readonly ConcurrentDictionary<string, ThrottledLog> throttledLogs = new();
 
     internal ThrottledLogs(IClock clock, ThrottledPath[] throttles)
@@ -41,7 +40,7 @@ public sealed class ThrottledLogs
             {
                 throttledLog = new ThrottledLog
                 (
-                    new ThrottledPath(new TempLogThrottleOptions { Path = path }),
+                    new ThrottledPath(new TempLogThrottleOptions(path)),
                     clock
                 );
             }

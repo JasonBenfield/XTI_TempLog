@@ -2,7 +2,7 @@
 
 namespace XTI_TempLog;
 
-public sealed class ThrottledPath
+public sealed partial class ThrottledPath
 {
     private readonly Regex pathRegex;
 
@@ -13,7 +13,7 @@ public sealed class ThrottledPath
 
     public ThrottledPath(string path, int throttleRequestInterval, int throttleExceptionInterval)
     {
-        path = path?.Trim() ?? "";
+        path = WhitespaceRegex().Replace(path?.Trim() ?? "", "");
         Path = path;
         if (path.Contains("/") && !path.Contains("\\/"))
         {
@@ -31,4 +31,7 @@ public sealed class ThrottledPath
     public bool IsForPath(string path) => pathRegex.IsMatch(path);
 
     internal string Format() => pathRegex.ToString();
+
+    [GeneratedRegex("\\s+")]
+    private static partial Regex WhitespaceRegex();
 }
