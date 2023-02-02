@@ -7,6 +7,7 @@ public sealed class LogEntryModel
     private string caption = "";
     private string message = "";
     private string detail = "";
+    private string parentEventKey = "";
 
     public string EventKey
     {
@@ -43,4 +44,11 @@ public sealed class LogEntryModel
     }
 
     public int ActualCount { get; set; }
+
+    public string ParentEventKey
+    {
+        get => parentEventKey;
+        set => parentEventKey = value ?? "";
+    }
+
 }

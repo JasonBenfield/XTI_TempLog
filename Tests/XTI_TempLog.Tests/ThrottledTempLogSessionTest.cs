@@ -436,7 +436,8 @@ public sealed class ThrottledTempLogSessionTest
             (
                 AppEventSeverity.Values.CriticalError,
                 ex,
-                "An unexpected error occurred"
+                "An unexpected error occurred",
+                ""
             );
         }
     }

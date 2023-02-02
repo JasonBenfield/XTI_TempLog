@@ -157,10 +157,10 @@ public sealed class TempLogSession
         return tempEvent;
     }
 
-    public Task<LogEntryModel> LogException(AppEventSeverity severity, Exception ex, string caption) =>
-        LogError(severity, getExceptionMessage(ex), ex.StackTrace ?? "", caption);
+    public Task<LogEntryModel> LogException(AppEventSeverity severity, Exception ex, string caption, string parentEventKey) =>
+        LogError(severity, getExceptionMessage(ex), ex.StackTrace ?? "", caption, parentEventKey);
 
-    public async Task<LogEntryModel> LogError(AppEventSeverity severity, string message, string detail, string caption)
+    public async Task<LogEntryModel> LogError(AppEventSeverity severity, string message, string detail, string caption, string parentEventKey)
     {
         var tempEvent = new LogEntryModel
         {
@@ -170,7 +170,8 @@ public sealed class TempLogSession
             Severity = severity.Value,
             Caption = caption,
             Message = message,
-            Detail = detail
+            Detail = detail,
+            ParentEventKey = parentEventKey
         };
         var exceptionThrottledLog = throttledLog;
         if (exceptionThrottledLog == null)

@@ -161,7 +161,8 @@ internal sealed class TempLogSessionTest
             (
                 AppEventSeverity.Values.CriticalError,
                 ex,
-                "An unexpected error occurred"
+                "An unexpected error occurred",
+                ""
             );
             thrownException = ex;
         }
