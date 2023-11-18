@@ -8,6 +8,7 @@ public sealed class LogEntryModel
     private string message = "";
     private string detail = "";
     private string parentEventKey = "";
+    private string category = "";
 
     public string EventKey
     {
@@ -51,4 +52,9 @@ public sealed class LogEntryModel
         set => parentEventKey = value ?? "";
     }
 
+    public string Category
+    {
+        get => category;
+        set => category = value ?? "";
+    }
 }

@@ -70,13 +70,17 @@ public sealed class TempLogSession
         return session;
     }
 
-    public async Task<StartRequestModel> StartRequest(string path)
+    public Task<StartRequestModel> StartRequest(string path) =>
+        StartRequest(path, "");
+
+    public async Task<StartRequestModel> StartRequest(string path, string sourceRequestKey)
     {
         var environment = await appEnvironmentContext.Value();
         startRequestModel = new StartRequestModel
         {
             RequestKey = generateKey(),
             SessionKey = currentSession.SessionKey,
+            SourceRequestKey = sourceRequestKey,
             InstallationID = environment.InstallationID,
             Path = path,
             TimeStarted = clock.Now()
@@ -111,6 +115,8 @@ public sealed class TempLogSession
 
     private string generateKey() => Guid.NewGuid().ToString("N");
 
+    public string GetCurrentRequestKey() => startRequestModel?.RequestKey ?? "";
+
     public async Task<EndRequestModel> EndRequest()
     {
         var request = new EndRequestModel
@@ -123,6 +129,7 @@ public sealed class TempLogSession
             var serialized = JsonSerializer.Serialize(request);
             await log.Write($"endRequest.{request.RequestKey}.log", serialized);
         }
+        startRequestModel = null;
         return request;
     }
 
@@ -138,7 +145,7 @@ public sealed class TempLogSession
         return request;
     }
 
-    public async Task<LogEntryModel> LogInformation(string caption, string message, string details)
+    public async Task<LogEntryModel> LogInformation(string caption, string message, string details = "", string category = "")
     {
         var tempEvent = new LogEntryModel
         {
@@ -148,7 +155,8 @@ public sealed class TempLogSession
             Severity = AppEventSeverity.Values.Information.Value,
             Caption = caption,
             Message = message,
-            Detail = details
+            Detail = details,
+            Category = category
         };
         if (isRequestLogged)
         {
@@ -157,10 +165,34 @@ public sealed class TempLogSession
         return tempEvent;
     }
 
-    public Task<LogEntryModel> LogException(AppEventSeverity severity, Exception ex, string caption, string parentEventKey) =>
-        LogError(severity, getExceptionMessage(ex), ex.StackTrace ?? "", caption, parentEventKey);
+    public Task<LogEntryModel> LogException
+    (
+        AppEventSeverity severity,
+        Exception ex,
+        string caption,
+        string parentEventKey
+    ) =>
+        LogException(severity, ex, caption, parentEventKey, ex.GetType().Name);
 
-    public async Task<LogEntryModel> LogError(AppEventSeverity severity, string message, string detail, string caption, string parentEventKey)
+    public Task<LogEntryModel> LogException
+    (
+        AppEventSeverity severity, 
+        Exception ex, 
+        string caption, 
+        string parentEventKey,
+        string category
+    ) =>
+        LogError(severity, getExceptionMessage(ex), ex.StackTrace ?? "", caption, parentEventKey, category);
+
+    public async Task<LogEntryModel> LogError
+    (
+        AppEventSeverity severity, 
+        string message, 
+        string detail, 
+        string caption, 
+        string parentEventKey, 
+        string category
+    )
     {
         var tempEvent = new LogEntryModel
         {
@@ -171,7 +203,8 @@ public sealed class TempLogSession
             Caption = caption,
             Message = message,
             Detail = detail,
-            ParentEventKey = parentEventKey
+            ParentEventKey = parentEventKey,
+            Category = category
         };
         var exceptionThrottledLog = throttledLog;
         if (exceptionThrottledLog == null)
