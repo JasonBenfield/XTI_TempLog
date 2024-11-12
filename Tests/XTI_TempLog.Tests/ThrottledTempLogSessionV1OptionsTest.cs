@@ -3,11 +3,12 @@ using NUnit.Framework;
 using XTI_Core;
 using XTI_Core.Extensions;
 using XTI_Core.Fakes;
+using XTI_TempLog.Abstractions;
 using XTI_TempLog.Fakes;
 
 namespace XTI_TempLog.Tests;
 
-internal sealed class ThrottledTempLogSessionOptionsTest
+internal sealed class ThrottledTempLogSessionV1OptionsTest
 {
     [Test]
     public async Task ShouldNotLogStartRequest_WhenMadeBeforeThrottledInterval()
@@ -22,15 +23,15 @@ internal sealed class ThrottledTempLogSessionOptionsTest
                 ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
             }
         };
-        var services = setup(throttles);
-        var tempLogSession = services.GetRequiredService<TempLogSession>();
+        var services = Setup(throttles);
+        var tempLogSession = services.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         await tempLogSession.StartRequest($"Test/Current/{path}");
         await tempLogSession.EndRequest();
         var clock = (FakeClock)services.GetRequiredService<IClock>();
         clock.Add(throttleInterval.Subtract(TimeSpan.FromSeconds(1)));
         await tempLogSession.StartRequest($"Test/Current/{path}");
-        var tempLog = services.GetRequiredService<TempLog>();
+        var tempLog = services.GetRequiredService<TempLogV1>();
         var startRequests = tempLog.StartRequestFiles(clock.Now()).ToArray();
         Assert.That(startRequests.Length, Is.EqualTo(1), "Should not log second start request within the throttle interval");
     }
@@ -48,15 +49,15 @@ internal sealed class ThrottledTempLogSessionOptionsTest
                 ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
             }
         };
-        var services = setup(throttles);
-        var tempLogSession = services.GetRequiredService<TempLogSession>();
+        var services = Setup(throttles);
+        var tempLogSession = services.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         await tempLogSession.StartRequest($"Test/Current/{path}");
         await tempLogSession.EndRequest();
         var clock = (FakeClock)services.GetRequiredService<IClock>();
         clock.Add(throttleInterval.Subtract(TimeSpan.FromSeconds(1)));
         await tempLogSession.StartRequest($"Test/Current/{path}");
-        var tempLog = services.GetRequiredService<TempLog>();
+        var tempLog = services.GetRequiredService<TempLogV1>();
         var startRequests = tempLog.StartRequestFiles(clock.Now()).ToArray();
         Assert.That(startRequests.Length, Is.EqualTo(1), "Should not log second start request within the throttle interval");
     }
@@ -74,15 +75,15 @@ internal sealed class ThrottledTempLogSessionOptionsTest
                 ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
             }
         };
-        var services = setup(throttles);
-        var tempLogSession = services.GetRequiredService<TempLogSession>();
+        var services = Setup(throttles);
+        var tempLogSession = services.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         await tempLogSession.StartRequest($"Test/Current/{path}");
         await tempLogSession.EndRequest();
         var clock = (FakeClock)services.GetRequiredService<IClock>();
         clock.Add(throttleInterval.Subtract(TimeSpan.FromSeconds(1)));
         await tempLogSession.StartRequest($"Test/Current/{path}");
-        var tempLog = services.GetRequiredService<TempLog>();
+        var tempLog = services.GetRequiredService<TempLogV1>();
         var startRequests = tempLog.StartRequestFiles(clock.Now()).ToArray();
         Assert.That(startRequests.Length, Is.EqualTo(1), "Should not log second start request within the throttle interval");
     }
@@ -100,8 +101,8 @@ internal sealed class ThrottledTempLogSessionOptionsTest
                 ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
             }
         };
-        var services = setup(throttles);
-        var tempLogSession = services.GetRequiredService<TempLogSession>();
+        var services = Setup(throttles);
+        var tempLogSession = services.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         await tempLogSession.StartRequest(path);
         await tempLogSession.EndRequest();
@@ -109,7 +110,7 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         clock.Add(throttleInterval.Subtract(TimeSpan.FromSeconds(1)));
         await tempLogSession.StartRequest(path);
         await tempLogSession.EndRequest();
-        var tempLog = services.GetRequiredService<TempLog>();
+        var tempLog = services.GetRequiredService<TempLogV1>();
         var endRequestFiles = tempLog.EndRequestFiles(clock.Now()).ToArray();
         Assert.That(endRequestFiles.Length, Is.EqualTo(1), "Should not log second end request within the throttle interval");
     }
@@ -126,16 +127,16 @@ internal sealed class ThrottledTempLogSessionOptionsTest
                 ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
             }
         };
-        var services = setup(throttles);
+        var services = Setup(throttles);
         var anotherPath = "group1/action2";
-        var tempLogSession = services.GetRequiredService<TempLogSession>();
+        var tempLogSession = services.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         await tempLogSession.StartRequest(anotherPath);
         await tempLogSession.EndRequest();
         var clock = (FakeClock)services.GetRequiredService<IClock>();
         clock.Add(throttleInterval.Subtract(TimeSpan.FromSeconds(1)));
         await tempLogSession.StartRequest(anotherPath);
-        var tempLog = services.GetRequiredService<TempLog>();
+        var tempLog = services.GetRequiredService<TempLogV1>();
         var startRequests = tempLog.StartRequestFiles(clock.Now()).ToArray();
         Assert.That(startRequests.Length, Is.EqualTo(2), "Should log when path is not throttled");
     }
@@ -153,8 +154,8 @@ internal sealed class ThrottledTempLogSessionOptionsTest
                 ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
             }
         };
-        var services = setup(throttles);
-        var tempLogSession = services.GetRequiredService<TempLogSession>();
+        var services = Setup(throttles);
+        var tempLogSession = services.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         await tempLogSession.StartRequest($"Test/Current/{path}");
         await tempLogSession.EndRequest();
@@ -165,7 +166,7 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         clock.Add(TimeSpan.FromSeconds(2));
         await tempLogSession.StartRequest($"Test/Current/{path}");
         await tempLogSession.EndRequest();
-        var tempLog = services.GetRequiredService<TempLog>();
+        var tempLog = services.GetRequiredService<TempLogV1>();
         var startRequests = tempLog.StartRequestFiles(clock.Now()).ToArray();
         Assert.That(startRequests.Length, Is.EqualTo(2), "Should log start request after the throttle interval");
     }
@@ -183,18 +184,18 @@ internal sealed class ThrottledTempLogSessionOptionsTest
                 ThrottleExceptionInterval = (int)throttleInterval.TotalMilliseconds
             }
         };
-        var services = setup(throttles);
-        var tempLogSession = services.GetRequiredService<TempLogSession>();
+        var services = Setup(throttles);
+        var tempLogSession = services.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         await tempLogSession.StartRequest(path);
-        await logException(tempLogSession);
+        await LogException(tempLogSession);
         await tempLogSession.EndRequest();
         var clock = (FakeClock)services.GetRequiredService<IClock>();
         clock.Add(throttleInterval.Subtract(TimeSpan.FromSeconds(1)));
         await tempLogSession.StartRequest(path);
-        await logException(tempLogSession);
+        await LogException(tempLogSession);
         await tempLogSession.EndRequest();
-        var tempLog = services.GetRequiredService<TempLog>();
+        var tempLog = services.GetRequiredService<TempLogV1>();
         var logEventFiles = tempLog.LogEventFiles(clock.Now()).ToArray();
         Assert.That(logEventFiles.Length, Is.EqualTo(1), "Should not log second event when it happens before the throttle interval");
     }
@@ -212,22 +213,22 @@ internal sealed class ThrottledTempLogSessionOptionsTest
                 ThrottleExceptionInterval = (int)throttleInterval.TotalMilliseconds
             }
         };
-        var services = setup(throttles);
-        var tempLogSession = services.GetRequiredService<TempLogSession>();
+        var services = Setup(throttles);
+        var tempLogSession = services.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         await tempLogSession.StartRequest($"Test/Current/{path}");
-        await logException(tempLogSession);
+        await LogException(tempLogSession);
         await tempLogSession.EndRequest();
         var clock = (FakeClock)services.GetRequiredService<IClock>();
         clock.Add(throttleInterval.Subtract(TimeSpan.FromSeconds(1)));
         await tempLogSession.StartRequest($"Test/Current/{path}");
-        await logException(tempLogSession);
+        await LogException(tempLogSession);
         await tempLogSession.EndRequest();
         clock.Add(TimeSpan.FromSeconds(2));
         await tempLogSession.StartRequest($"Test/Current/{path}");
-        await logException(tempLogSession);
+        await LogException(tempLogSession);
         await tempLogSession.EndRequest();
-        var tempLog = services.GetRequiredService<TempLog>();
+        var tempLog = services.GetRequiredService<TempLogV1>();
         var logEventFiles = tempLog.LogEventFiles(clock.Now()).ToArray();
         Assert.That(logEventFiles.Length, Is.EqualTo(2), "Should log exception after the throttle interval");
     }
@@ -245,17 +246,17 @@ internal sealed class ThrottledTempLogSessionOptionsTest
                 ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
             }
         };
-        var services = setup(throttles);
-        var tempLogSession = services.GetRequiredService<TempLogSession>();
+        var services = Setup(throttles);
+        var tempLogSession = services.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         await tempLogSession.StartRequest(path);
         await tempLogSession.EndRequest();
         var clock = (FakeClock)services.GetRequiredService<IClock>();
         clock.Add(throttleInterval.Subtract(TimeSpan.FromSeconds(1)));
         await tempLogSession.StartRequest(path);
-        await logException(tempLogSession);
+        await LogException(tempLogSession);
         await tempLogSession.EndRequest();
-        var tempLog = services.GetRequiredService<TempLog>();
+        var tempLog = services.GetRequiredService<TempLogV1>();
         var startRequests = tempLog.StartRequestFiles(clock.Now()).ToArray();
         Assert.That(startRequests.Length, Is.EqualTo(2), "Should log throttled start request when logging an event");
     }
@@ -273,22 +274,22 @@ internal sealed class ThrottledTempLogSessionOptionsTest
                 ThrottleRequestInterval = (int)throttleInterval.TotalMilliseconds
             }
         };
-        var services = setup(throttles);
-        var tempLogSession = services.GetRequiredService<TempLogSession>();
+        var services = Setup(throttles);
+        var tempLogSession = services.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         await tempLogSession.StartRequest(path);
         await tempLogSession.EndRequest();
         var clock = (FakeClock)services.GetRequiredService<IClock>();
         clock.Add(throttleInterval.Subtract(TimeSpan.FromSeconds(1)));
         await tempLogSession.StartRequest(path);
-        await logException(tempLogSession);
+        await LogException(tempLogSession);
         await tempLogSession.EndRequest();
-        var tempLog = services.GetRequiredService<TempLog>();
+        var tempLog = services.GetRequiredService<TempLogV1>();
         var endRequests = tempLog.EndRequestFiles(clock.Now()).ToArray();
         Assert.That(endRequests.Length, Is.EqualTo(2), "Should log throttled end request when logging an event");
     }
 
-    private static async Task logException(TempLogSession tempLogSession)
+    private static async Task LogException(TempLogSessionV1 tempLogSession)
     {
         try
         {
@@ -306,7 +307,7 @@ internal sealed class ThrottledTempLogSessionOptionsTest
         }
     }
 
-    private IServiceProvider setup(IEnumerable<TempLogThrottleOptions> throttles)
+    private IServiceProvider Setup(IEnumerable<TempLogThrottleOptions> throttles)
     {
         Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Test");
         var hostBuilder = new XtiHostBuilder();

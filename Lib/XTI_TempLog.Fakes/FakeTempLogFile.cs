@@ -1,8 +1,11 @@
-﻿namespace XTI_TempLog.Fakes;
+﻿using XTI_Core;
+using XTI_TempLog.Abstractions;
+
+namespace XTI_TempLog.Fakes;
+
 public sealed class FakeTempLogFile : ITempLogFile
 {
     private string contents = "";
-    private bool writeToConsole = false;
 
     internal FakeTempLogFile(string name, DateTimeOffset lastModified)
     {
@@ -10,15 +13,23 @@ public sealed class FakeTempLogFile : ITempLogFile
         LastModified = lastModified;
     }
 
-    public void WriteToConsole()
-    {
-        writeToConsole = true;
-    }
+    public string Name { get;  }
 
-    public string Name { get; }
     public DateTimeOffset LastModified { get; }
 
     public event EventHandler<RenamedEventArgs>? Renamed;
+
+    public event EventHandler? Deleted;
+
+    public void Delete() => Deleted?.Invoke(this, new EventArgs());
+
+    public Task<TempLogSessionDetailModel[]> Read()
+    {
+        var sessionDetails = string.IsNullOrWhiteSpace(contents) ?
+            [] :
+            XtiSerializer.DeserializeArray<TempLogSessionDetailModel>(contents);
+        return Task.FromResult(sessionDetails);
+    }
 
     public ITempLogFile WithNewName(string name)
     {
@@ -27,20 +38,9 @@ public sealed class FakeTempLogFile : ITempLogFile
         return newFile;
     }
 
-    public Task<string> Read() => Task.FromResult(contents);
-
-    public Task Write(string contents)
+    public Task Write(TempLogSessionDetailModel[] sessionDetails)
     {
-        if (writeToConsole)
-        {
-            Console.WriteLine($"Temp Log {Name}\r\n{contents}");
-        }
-        this.contents = contents;
+        contents = XtiSerializer.Serialize(sessionDetails);
         return Task.CompletedTask;
     }
-
-    public event EventHandler? Deleted;
-
-    public void Delete() => Deleted?.Invoke(this, new EventArgs());
-
 }

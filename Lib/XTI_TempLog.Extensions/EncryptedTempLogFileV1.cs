@@ -3,12 +3,12 @@ using XTI_Secrets;
 
 namespace XTI_TempLog.Extensions;
 
-public sealed class EncryptedTempLogFile : ITempLogFile
+public sealed class EncryptedTempLogFileV1 : ITempLogFileV1
 {
-    private readonly ITempLogFile source;
+    private readonly ITempLogFileV1 source;
     private readonly IDataProtector dataProtector;
 
-    public EncryptedTempLogFile(ITempLogFile source, IDataProtector dataProtector)
+    public EncryptedTempLogFileV1(ITempLogFileV1 source, IDataProtector dataProtector)
     {
         this.source = source;
         this.dataProtector = dataProtector;
@@ -31,7 +31,7 @@ public sealed class EncryptedTempLogFile : ITempLogFile
         return encryptedValue.Value();
     }
 
-    public ITempLogFile WithNewName(string name) => new EncryptedTempLogFile(source.WithNewName(name), dataProtector);
+    public ITempLogFileV1 WithNewName(string name) => new EncryptedTempLogFileV1(source.WithNewName(name), dataProtector);
 
     public void Delete() => source.Delete();
 }

@@ -1,6 +1,6 @@
 ﻿namespace XTI_TempLog.Extensions;
 
-public sealed class DiskTempLogFile : ITempLogFile
+public sealed class DiskTempLogFile : ITempLogFileV1
 {
     private readonly string path;
 
@@ -15,7 +15,7 @@ public sealed class DiskTempLogFile : ITempLogFile
 
     public DateTimeOffset LastModified { get; }
 
-    public ITempLogFile WithNewName(string name)
+    public ITempLogFileV1 WithNewName(string name)
     {
         var newPath = Path.Combine(Path.GetDirectoryName(path) ?? "", name);
         File.Move(path, newPath);

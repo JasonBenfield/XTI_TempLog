@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System;
+using System.Text.Json;
 using XTI_Core;
 using XTI_TempLog.Abstractions;
 
@@ -6,25 +7,30 @@ namespace XTI_TempLog;
 
 public sealed class TempLogSession
 {
-    private readonly TempLog log;
+    private readonly TempLogV1 log;
+    private readonly TempLogRepository logRepo;
     private readonly IAppEnvironmentContext appEnvironmentContext;
     private readonly IClock clock;
     private readonly CurrentSession currentSession;
     private readonly ThrottledLogs throttledLogs;
 
+    private TempLogSessionModel? session;
+    private TempLogRequestModel? request;
     private StartRequestModel? startRequestModel;
     private ThrottledLog? throttledLog;
     private bool isRequestLogged;
 
     public TempLogSession
     (
-        TempLog log,
+        TempLogRepository logRepo,
+        TempLogV1 log,
         IAppEnvironmentContext appEnvironmentContext,
         CurrentSession currentSession,
         IClock clock,
         ThrottledLogs throttledLogs
     )
     {
+        this.logRepo = logRepo;
         this.log = log;
         this.appEnvironmentContext = appEnvironmentContext;
         this.currentSession = currentSession;
@@ -32,120 +38,95 @@ public sealed class TempLogSession
         this.throttledLogs = throttledLogs;
     }
 
-    public async Task<StartSessionModel> StartSession()
+    public async Task<TempLogSessionModel> StartSession()
     {
-        StartSessionModel session;
         var environment = await appEnvironmentContext.Value();
-        if (string.IsNullOrWhiteSpace(currentSession.SessionKey))
-        {
-            currentSession.SessionKey = generateKey();
-            session = new StartSessionModel
-            {
-                SessionKey = currentSession.SessionKey,
-                TimeStarted = clock.Now(),
-                UserName = environment.UserName,
-                UserAgent = environment.UserAgent,
-                RemoteAddress = environment.RemoteAddress,
-                RequesterKey = environment.RequesterKey
-            };
-            var serialized = JsonSerializer.Serialize(session);
-            await log.Write($"startSession.{session.SessionKey}.log", serialized);
-        }
-        else
-        {
-            session = new StartSessionModel { SessionKey = currentSession.SessionKey };
-        }
+        session = logRepo.AddOrUpdateSession(currentSession.SessionKey, environment, clock.Now());
+        currentSession.SessionKey = session.SessionKey;
         return session;
     }
 
-    public async Task<AuthenticateSessionModel> AuthenticateSession(string userName)
+    public async Task<TempLogSessionModel> AuthenticateSession(string userName)
     {
-        var session = new AuthenticateSessionModel
-        {
-            SessionKey = currentSession.SessionKey,
-            UserName = userName
-        };
-        var serialized = JsonSerializer.Serialize(session);
-        await log.Write($"authSession.{session.SessionKey}.log", serialized);
+        var environment = await appEnvironmentContext.Value();
+        session = logRepo.AddOrUpdateSession(currentSession.SessionKey, environment, userName, clock.Now());
+        currentSession.SessionKey = session.SessionKey;
         return session;
     }
 
-    public Task<StartRequestModel> StartRequest(string path) =>
-        StartRequest(path, "");
+    public Task StartRequest(string path) => StartRequest(path, "");
 
-    public async Task<StartRequestModel> StartRequest(string path, string sourceRequestKey)
+    public async Task StartRequest(string path, string sourceRequestKey)
     {
         var environment = await appEnvironmentContext.Value();
-        startRequestModel = new StartRequestModel
-        {
-            RequestKey = generateKey(),
-            SessionKey = currentSession.SessionKey,
-            SourceRequestKey = sourceRequestKey,
-            InstallationID = environment.InstallationID,
-            Path = path,
-            TimeStarted = clock.Now()
-        };
         throttledLog = throttledLogs.GetThrottledLog(path);
         var requestThrottledLog = throttledLog;
         requestThrottledLog.IncrementRequestCount();
-        startRequestModel.ActualCount = requestThrottledLog.RequestCount;
+        if (session == null)
+        {
+            session = logRepo.AddOrUpdateSession(currentSession.SessionKey, environment, clock.Now());
+        }
         if (requestThrottledLog.CanLogRequest())
         {
-            await startRequest(requestThrottledLog);
+            request = logRepo.AddOrUpdateRequest
+            (
+                session,
+                environment,
+                path,
+                sourceRequestKey,
+                requestThrottledLog.RequestCount,
+                clock.Now()
+            );
+            throttledLog.RequestLogged();
+            isRequestLogged = true;
         }
         else
         {
+            request = logRepo.CreateRequest
+            (
+                session,
+                environment,
+                path,
+                sourceRequestKey,
+                requestThrottledLog.RequestCount,
+                clock.Now()
+            );
             isRequestLogged = false;
         }
-        return startRequestModel;
     }
 
-    private async Task startRequest(ThrottledLog throttledLog)
-    {
-        await startRequest();
-        throttledLog.RequestLogged();
-        isRequestLogged = true;
-    }
-
-    private async Task startRequest()
-    {
-        var serialized = JsonSerializer.Serialize(startRequestModel);
-        await log.Write($"startRequest.{startRequestModel?.RequestKey}.log", serialized);
-    }
-
-    private string generateKey() => Guid.NewGuid().ToString("N");
+    private string generateKey() => Guid.NewGuid().ToString("D");
 
     public string GetCurrentRequestKey() => startRequestModel?.RequestKey ?? "";
 
-    public async Task<EndRequestModel> EndRequest()
+    public async Task EndRequest()
     {
-        var request = new EndRequestModel
+        if (isRequestLogged && request != null)
         {
-            RequestKey = startRequestModel?.RequestKey ?? generateKey(),
-            TimeEnded = clock.Now()
-        };
-        if (isRequestLogged)
-        {
+            if(session == null)
+            {
+                var environment = await appEnvironmentContext.Value();
+                session = logRepo.AddOrUpdateSession(currentSession.SessionKey, environment, clock.Now());
+            }
+            request.TimeEnded = clock.Now();
+            logRepo.AddOrUpdateRequest(session, request);
             var serialized = JsonSerializer.Serialize(request);
             await log.Write($"endRequest.{request.RequestKey}.log", serialized);
         }
-        startRequestModel = null;
-        return request;
     }
 
-    public async Task<EndSessionModel> EndSession()
+    public async Task EndSession()
     {
-        var request = new EndSessionModel
+        if (session == null)
         {
-            SessionKey = currentSession.SessionKey,
-            TimeEnded = clock.Now()
-        };
-        var serialized = JsonSerializer.Serialize(request);
-        await log.Write($"endSession.{request.SessionKey}.log", serialized);
-        return request;
+            var environment = await appEnvironmentContext.Value();
+            session = logRepo.AddOrUpdateSession(currentSession.SessionKey, environment, clock.Now());
+        }
+        session.TimeEnded = clock.Now();
+        logRepo.AddOrUpdateSession(session);
     }
 
-    public async Task<LogEntryModel> LogInformation(string caption, string message, string details = "", string category = "")
+    public async Task LogInformation(string caption, string message, string details = "", string category = "")
     {
         var tempEvent = new LogEntryModel
         {
@@ -160,12 +141,21 @@ public sealed class TempLogSession
         };
         if (isRequestLogged)
         {
-            await WriteLogEntry(tempEvent);
+            await WriteLogEntry
+            (
+                AppEventSeverity.Values.Information,
+                message,
+                details,
+                caption,
+                "",
+                category,
+                clock.Now(),
+                1
+            );
         }
-        return tempEvent;
     }
 
-    public Task<LogEntryModel> LogException
+    public Task LogException
     (
         AppEventSeverity severity,
         Exception ex,
@@ -174,64 +164,95 @@ public sealed class TempLogSession
     ) =>
         LogException(severity, ex, caption, parentEventKey, ex.GetType().Name);
 
-    public Task<LogEntryModel> LogException
+    public Task LogException
     (
-        AppEventSeverity severity, 
-        Exception ex, 
-        string caption, 
+        AppEventSeverity severity,
+        Exception ex,
+        string caption,
         string parentEventKey,
         string category
     ) =>
-        LogError(severity, getExceptionMessage(ex), ex.StackTrace ?? "", caption, parentEventKey, category);
+        LogError(severity, GetExceptionMessage(ex), ex.StackTrace ?? "", caption, parentEventKey, category);
 
-    public async Task<LogEntryModel> LogError
+    public async Task LogError
     (
-        AppEventSeverity severity, 
-        string message, 
-        string detail, 
-        string caption, 
-        string parentEventKey, 
+        AppEventSeverity severity,
+        string message,
+        string detail,
+        string caption,
+        string parentEventKey,
         string category
     )
     {
-        var tempEvent = new LogEntryModel
-        {
-            EventKey = generateKey(),
-            RequestKey = startRequestModel?.RequestKey ?? generateKey(),
-            TimeOccurred = clock.Now(),
-            Severity = severity.Value,
-            Caption = caption,
-            Message = message,
-            Detail = detail,
-            ParentEventKey = parentEventKey,
-            Category = category
-        };
         var exceptionThrottledLog = throttledLog;
         if (exceptionThrottledLog == null)
         {
             exceptionThrottledLog = throttledLogs.GetThrottledLog(startRequestModel?.Path ?? "");
         }
         exceptionThrottledLog.IncrementExceptionCount();
-        tempEvent.ActualCount = exceptionThrottledLog.ExceptionCount;
         if (exceptionThrottledLog.CanLogException())
         {
-            if (!isRequestLogged)
+            if (!isRequestLogged && request != null)
             {
-                await startRequest(exceptionThrottledLog);
+                if(session == null)
+                {
+                    var environment = await appEnvironmentContext.Value();
+                    session = logRepo.AddOrUpdateSession(currentSession.SessionKey, environment, clock.Now());
+                }
+                logRepo.AddOrUpdateRequest(session, request);
+                isRequestLogged = true;
             }
-            await WriteLogEntry(tempEvent);
+            await WriteLogEntry
+            (
+                severity,
+                message,
+                detail,
+                caption,
+                parentEventKey,
+                category,
+                clock.Now(),
+                exceptionThrottledLog.ExceptionCount
+            );
             exceptionThrottledLog.ExceptionLogged();
         }
-        return tempEvent;
     }
 
-    private async Task WriteLogEntry(LogEntryModel tempEvent)
+    private async Task WriteLogEntry
+    (
+        AppEventSeverity severity,
+        string message,
+        string detail,
+        string caption,
+        string parentEventKey,
+        string category,
+        DateTimeOffset timeOccurred,
+        int actualCount
+    )
     {
-        var serialized = JsonSerializer.Serialize(tempEvent);
-        await log.Write($"event.{tempEvent.EventKey}.log", serialized);
+        if(request != null)
+        {
+            if (session == null)
+            {
+                var environment = await appEnvironmentContext.Value();
+                session = logRepo.AddOrUpdateSession(currentSession.SessionKey, environment, clock.Now());
+            }
+            logRepo.AddOrUpdateLogEntry
+            (
+                session,
+                request,
+                severity,
+                message,
+                detail,
+                caption,
+                parentEventKey,
+                category,
+                timeOccurred,
+                actualCount
+            );
+        }
     }
 
-    private string getExceptionMessage(Exception ex)
+    private string GetExceptionMessage(Exception ex)
     {
         var messages = new List<string>();
         var currentEx = ex;

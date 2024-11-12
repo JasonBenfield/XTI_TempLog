@@ -17,7 +17,7 @@ internal sealed class TempSessionContextTest
         var sp = setup();
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
-        var tempLog = sp.GetRequiredService<TempLog>();
+        var tempLog = sp.GetRequiredService<TempLogV1>();
         var files = tempLog.StartSessionFiles(DateTime.UtcNow.AddMinutes(1)).ToArray();
         Assert.That(files.Length, Is.EqualTo(1), "Should write file to temp log");
     }
@@ -28,7 +28,7 @@ internal sealed class TempSessionContextTest
         var sp = setup();
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
-        var tempLog = sp.GetRequiredService<TempLog>();
+        var tempLog = sp.GetRequiredService<TempLogV1>();
         var files = tempLog.StartSessionFiles(DateTime.Now.AddMinutes(1)).ToArray();
         const string newName = "moved.txt";
         files[0].WithNewName(newName);
@@ -44,7 +44,7 @@ internal sealed class TempSessionContextTest
         var sp = setup();
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
-        var tempLog = sp.GetRequiredService<TempLog>();
+        var tempLog = sp.GetRequiredService<TempLogV1>();
         var files = tempLog.StartSessionFiles(DateTime.UtcNow.AddMinutes(1)).ToArray();
         files[0].Delete();
         var tempLogFolder = getTempLogFolder(sp);
@@ -83,7 +83,7 @@ internal sealed class TempSessionContextTest
     public async Task ShouldDecryptEventFiles()
     {
         var sp = setup();
-        var tempLog = sp.GetRequiredService<TempLog>();
+        var tempLog = sp.GetRequiredService<TempLogV1>();
         var eventFiles = tempLog.LogEventFiles(DateTime.Now.AddMinutes(1));
         foreach (var eventFile in eventFiles)
         {
@@ -100,7 +100,7 @@ internal sealed class TempSessionContextTest
 
     private static async Task<StartSessionModel> getSingleStartSession(IServiceProvider sp)
     {
-        var tempLog = sp.GetRequiredService<TempLog>();
+        var tempLog = sp.GetRequiredService<TempLogV1>();
         var files = tempLog.StartSessionFiles(DateTime.Now).ToArray();
         Assert.That(files.Length, Is.EqualTo(1), "Should be one start session file");
         var serializedStartSession = await files[0].Read();

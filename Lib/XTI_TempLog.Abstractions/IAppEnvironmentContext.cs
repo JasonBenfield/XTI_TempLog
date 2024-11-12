@@ -1,4 +1,4 @@
-﻿namespace XTI_TempLog;
+﻿namespace XTI_TempLog.Abstractions;
 
 public interface IAppEnvironmentContext
 {
