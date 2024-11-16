@@ -1,6 +1,9 @@
-﻿namespace XTI_TempLog.Extensions;
+﻿using XTI_Core;
+using XTI_TempLog.Abstractions;
 
-public sealed class DiskTempLogFile : ITempLogFileV1
+namespace XTI_TempLog.Extensions;
+
+public sealed class DiskTempLogFile : ITempLogFile
 {
     private readonly string path;
 
@@ -15,7 +18,9 @@ public sealed class DiskTempLogFile : ITempLogFileV1
 
     public DateTimeOffset LastModified { get; }
 
-    public ITempLogFileV1 WithNewName(string name)
+    ITempLogFile ITempLogFile.WithNewName(string name) => WithNewName(name);
+
+    internal DiskTempLogFile WithNewName(string name)
     {
         var newPath = Path.Combine(Path.GetDirectoryName(path) ?? "", name);
         File.Move(path, newPath);
@@ -24,23 +29,46 @@ public sealed class DiskTempLogFile : ITempLogFileV1
 
     public void Delete() => File.Delete(path);
 
-    public async Task<string> Read()
+    public async Task<TempLogSessionDetailModel[]> Read()
+    {
+        var content = await ReadFile();
+        TempLogSessionDetailModel[] sessionDetails;
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            sessionDetails = [];
+        }
+        else
+        {
+            sessionDetails = XtiSerializer.DeserializeArray<TempLogSessionDetailModel>(content);
+        }
+        return sessionDetails;
+    }
+
+    internal async Task<string> ReadFile()
     {
         using var reader = new StreamReader(path);
         var content = await reader.ReadToEndAsync();
         return content;
     }
 
-    public async Task Write(string contents)
+    public async Task Write(TempLogSessionDetailModel[] sessionDetails)
+    {
+        if (sessionDetails.Any())
+        {
+            var contents = XtiSerializer.Serialize(sessionDetails);
+            await WriteFile(contents);
+        }
+    }
+
+    internal async Task WriteFile(string contents)
     {
         var dir = Path.GetDirectoryName(path);
         if (dir != null && !Directory.Exists(dir))
         {
             Directory.CreateDirectory(dir);
         }
-        using (var writer = new StreamWriter(path))
-        {
-            await writer.WriteAsync(contents);
-        }
+
+        using var writer = new StreamWriter(path);
+        await writer.WriteAsync(contents);
     }
 }

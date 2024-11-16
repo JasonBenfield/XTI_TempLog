@@ -8,14 +8,20 @@ public sealed class TempLogRepository
 {
     private readonly ConcurrentDictionary<string, TempLogSessionModel> sessionDict = new();
     private readonly ConcurrentDictionary<string, FlattenedLogEntryModel> flattenedLogEntryDict = new();
-    private readonly string affix;
+    private readonly string logSource;
     private readonly TempLog tempLog;
     private readonly string instanceID;
+    private static readonly Lock counterLock = new();
     private int keyID = 1;
 
-    public TempLogRepository(string affix, TempLog tempLog)
+    public TempLogRepository(TempLog tempLog)
+        :this(tempLog, Guid.NewGuid().ToString("N"))
+    {   
+    }
+
+    public TempLogRepository(TempLog tempLog, string logSource)
     {
-        this.affix = affix;
+        this.logSource = logSource;
         this.tempLog = tempLog;
         instanceID = Guid.NewGuid().ToString("N");
     }
@@ -49,12 +55,12 @@ public sealed class TempLogRepository
             RemoteAddress = environment.RemoteAddress,
             RequesterKey = environment.RequesterKey
         };
-        session = sessionDict.AddOrUpdate(session.SessionKey, session, (sk, s) => s);
+        session = RefreshSession(session);
         return session;
     }
 
-    internal TempLogSessionModel AddOrUpdateSession(TempLogSessionModel session) =>
-        session = sessionDict.AddOrUpdate(session.SessionKey, session, (sk, s) => s);
+    internal TempLogSessionModel EndSession(TempLogSessionModel session) =>
+        session = sessionDict.AddOrUpdate(session.SessionKey, session, (sk, s) => session);
 
     internal TempLogRequestModel AddOrUpdateRequest
     (
@@ -66,15 +72,32 @@ public sealed class TempLogRepository
         DateTimeOffset timeStarted
     )
     {
-        session = sessionDict.AddOrUpdate(session.SessionKey, session, (sk, s) => s);
+        if(session.UserName != environment.UserName && !string.IsNullOrWhiteSpace(environment.UserName))
+        {
+            session.UserName = environment.UserName;
+            session = RefreshSession(session);
+        }
         var request = CreateRequest(session, environment, path, sourceRequestKey, actualCount, timeStarted);
         var flattenedLogEntry = new FlattenedLogEntryModel
         {
             Session = session,
             Request = request
         };
-        flattenedLogEntryDict.AddOrUpdate(request.RequestKey, flattenedLogEntry, (k, le) => le);
+        flattenedLogEntryDict.AddOrUpdate(request.RequestKey, flattenedLogEntry, (k, le) => flattenedLogEntry);
         return request;
+    }
+
+    private TempLogSessionModel RefreshSession(TempLogSessionModel session)
+    {
+        session = sessionDict.AddOrUpdate(session.SessionKey, session, (sk, s) => session);
+        foreach (var flattenedLogEntry in flattenedLogEntryDict.Values)
+        {
+            if (flattenedLogEntry.Session.SessionKey == session.SessionKey)
+            {
+                flattenedLogEntry.Session = session;
+            }
+        }
+        return session;
     }
 
     internal TempLogRequestModel CreateRequest
@@ -90,7 +113,6 @@ public sealed class TempLogRepository
         return new TempLogRequestModel
         {
             RequestKey = GenerateKey("req"),
-            SessionKey = session.SessionKey,
             SourceRequestKey = sourceRequestKey,
             InstallationID = environment.InstallationID,
             Path = path,
@@ -109,7 +131,7 @@ public sealed class TempLogRepository
         );
     }
 
-    internal void AddOrUpdateLogEntry
+    internal LogEntryModel AddOrUpdateLogEntry
     (
         TempLogSessionModel session,
         TempLogRequestModel request,
@@ -126,7 +148,6 @@ public sealed class TempLogRepository
         var logEntry = new LogEntryModel
         {
             EventKey = GenerateKey("evt"),
-            RequestKey = request.RequestKey,
             TimeOccurred = timeOccurred,
             Severity = severity.Value,
             Caption = caption,
@@ -142,12 +163,17 @@ public sealed class TempLogRepository
             $"{request.RequestKey}{logEntry.EventKey}",
             new FlattenedLogEntryModel { Session = session, Request = request, LogEntry = logEntry }
         );
+        return logEntry;
     }
 
     private string GenerateKey(string keyType)
     {
-        var key = $"{keyType}{instanceID}{keyID:000000}";
-        keyID++;
+        string key;
+        lock (counterLock)
+        {
+            key = $"{keyType}{instanceID}{keyID:000000}";
+            keyID++;
+        }
         return key;
     }
 
@@ -167,7 +193,7 @@ public sealed class TempLogRepository
             if (flattenedLogEntryDict.TryRemove(key, out var flattenedLogEntry))
             {
                 flattenedLogEntries.Add(flattenedLogEntry);
-                if (!sessions.Contains(flattenedLogEntry.Session))
+                if (!sessions.Any(s => s.SessionKey == flattenedLogEntry.Session.SessionKey))
                 {
                     sessions.Add(flattenedLogEntry.Session);
                 }
@@ -177,7 +203,7 @@ public sealed class TempLogRepository
         foreach (var session in sessions)
         {
             var sessionLogEntries = flattenedLogEntries
-                .Where(sle => sle.Session == session);
+                .Where(sle => sle.Session.SessionKey == session.SessionKey);
             var requests = sessionLogEntries
                 .Select(sle => sle.Request)
                 .Where(sle => !string.IsNullOrWhiteSpace(sle.RequestKey))
@@ -205,7 +231,31 @@ public sealed class TempLogRepository
         }
         if (sessionDetails.Any())
         {
-            await tempLog.Write($"{DateTime.Now:yyMMddHHmmssfffffff}_{affix}.log", sessionDetails.ToArray());
+            await tempLog.Write($"{logSource}_{DateTime.Now:yyMMddHHmmssfffffff}.log", sessionDetails.ToArray());
         }
+    }
+
+    public async Task AutoWriteToLocalStorage(TimeSpan interval, CancellationToken ct)
+    {
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                await Task.Delay(interval, ct);
+                try
+                {
+                    await WriteToLocalStorage();
+                }
+                catch { }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        try
+        {
+            await WriteToLocalStorage();
+        }
+        catch { }
     }
 }

@@ -3,5 +3,7 @@
 public sealed class TempLogOptions
 {
     public static readonly string TempLog = nameof(TempLog);
-    public TempLogThrottleOptions[] Throttles { get; set; } = new TempLogThrottleOptions[0];
+
+    public int WriteIntervalInSeconds { get; set; } = 60;
+    public TempLogThrottleOptions[] Throttles { get; set; } = [];
 }

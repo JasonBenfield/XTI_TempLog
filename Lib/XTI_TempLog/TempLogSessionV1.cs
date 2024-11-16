@@ -145,9 +145,9 @@ public sealed class TempLogSessionV1
         return request;
     }
 
-    public async Task<LogEntryModel> LogInformation(string caption, string message, string details = "", string category = "")
+    public async Task<LogEntryModelV1> LogInformation(string caption, string message, string details = "", string category = "")
     {
-        var tempEvent = new LogEntryModel
+        var tempEvent = new LogEntryModelV1
         {
             EventKey = generateKey(),
             RequestKey = startRequestModel?.RequestKey ?? generateKey(),
@@ -165,7 +165,7 @@ public sealed class TempLogSessionV1
         return tempEvent;
     }
 
-    public Task<LogEntryModel> LogException
+    public Task<LogEntryModelV1> LogException
     (
         AppEventSeverity severity,
         Exception ex,
@@ -174,7 +174,7 @@ public sealed class TempLogSessionV1
     ) =>
         LogException(severity, ex, caption, parentEventKey, ex.GetType().Name);
 
-    public Task<LogEntryModel> LogException
+    public Task<LogEntryModelV1> LogException
     (
         AppEventSeverity severity, 
         Exception ex, 
@@ -184,7 +184,7 @@ public sealed class TempLogSessionV1
     ) =>
         LogError(severity, getExceptionMessage(ex), ex.StackTrace ?? "", caption, parentEventKey, category);
 
-    public async Task<LogEntryModel> LogError
+    public async Task<LogEntryModelV1> LogError
     (
         AppEventSeverity severity, 
         string message, 
@@ -194,7 +194,7 @@ public sealed class TempLogSessionV1
         string category
     )
     {
-        var tempEvent = new LogEntryModel
+        var tempEvent = new LogEntryModelV1
         {
             EventKey = generateKey(),
             RequestKey = startRequestModel?.RequestKey ?? generateKey(),
@@ -225,7 +225,7 @@ public sealed class TempLogSessionV1
         return tempEvent;
     }
 
-    private async Task WriteLogEntry(LogEntryModel tempEvent)
+    private async Task WriteLogEntry(LogEntryModelV1 tempEvent)
     {
         var serialized = JsonSerializer.Serialize(tempEvent);
         await log.Write($"event.{tempEvent.EventKey}.log", serialized);

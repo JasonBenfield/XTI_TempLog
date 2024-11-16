@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using System.Diagnostics;
 using System.Text.Json;
 using XTI_Core;
 using XTI_Core.Extensions;
@@ -9,13 +11,13 @@ using XTI_TempLog.Extensions;
 
 namespace XTI_TempLog.IntegrationTests;
 
-internal sealed class TempSessionContextTest
+internal sealed class TempLogSessionV1Test
 {
     [Test]
     public async Task ShouldWriteFileToTempLog()
     {
-        var sp = setup();
-        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        var sp = Setup();
+        var tempLogSession = sp.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         var tempLog = sp.GetRequiredService<TempLogV1>();
         var files = tempLog.StartSessionFiles(DateTime.UtcNow.AddMinutes(1)).ToArray();
@@ -25,14 +27,14 @@ internal sealed class TempSessionContextTest
     [Test]
     public async Task ShouldRenameFile()
     {
-        var sp = setup();
-        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        var sp = Setup();
+        var tempLogSession = sp.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         var tempLog = sp.GetRequiredService<TempLogV1>();
         var files = tempLog.StartSessionFiles(DateTime.Now.AddMinutes(1)).ToArray();
         const string newName = "moved.txt";
         files[0].WithNewName(newName);
-        var tempLogFolder = getTempLogFolder(sp);
+        var tempLogFolder = GetTempLogFolder(sp);
         var paths = Directory.GetFiles(tempLogFolder.Path());
         Assert.That(paths.Length, Is.EqualTo(1));
         Assert.That(Path.GetFileName(paths[0]), Is.EqualTo(newName), "Should rename file");
@@ -41,13 +43,13 @@ internal sealed class TempSessionContextTest
     [Test]
     public async Task ShouldDeleteFile()
     {
-        var sp = setup();
-        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        var sp = Setup();
+        var tempLogSession = sp.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
         var tempLog = sp.GetRequiredService<TempLogV1>();
         var files = tempLog.StartSessionFiles(DateTime.UtcNow.AddMinutes(1)).ToArray();
         files[0].Delete();
-        var tempLogFolder = getTempLogFolder(sp);
+        var tempLogFolder = GetTempLogFolder(sp);
         var paths = Directory.GetFiles(tempLogFolder.Path());
         Assert.That(paths.Length, Is.EqualTo(0), "Should delete file");
     }
@@ -55,20 +57,20 @@ internal sealed class TempSessionContextTest
     [Test]
     public async Task ShouldDeserializeStartSession()
     {
-        var sp = setup();
-        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        var sp = Setup();
+        var tempLogSession = sp.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
-        var startSession = await getSingleStartSession(sp);
+        var startSession = await GetSingleStartSession(sp);
         Assert.That(startSession.SessionKey?.Trim() ?? "", Is.Not.EqualTo(""), "Should deserialize start session");
     }
 
     [Test]
     public async Task ShouldEncryptTempLogFile()
     {
-        var sp = setup();
-        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        var sp = Setup();
+        var tempLogSession = sp.GetRequiredService<TempLogSessionV1>();
         await tempLogSession.StartSession();
-        var tempLogFolder = getTempLogFolder(sp);
+        var tempLogFolder = GetTempLogFolder(sp);
         var paths = Directory.GetFiles(tempLogFolder.Path());
         using var reader = new StreamReader(paths[0]);
         var contents = await reader.ReadToEndAsync();
@@ -82,7 +84,7 @@ internal sealed class TempSessionContextTest
     [Test]
     public async Task ShouldDecryptEventFiles()
     {
-        var sp = setup();
+        var sp = Setup();
         var tempLog = sp.GetRequiredService<TempLogV1>();
         var eventFiles = tempLog.LogEventFiles(DateTime.Now.AddMinutes(1));
         foreach (var eventFile in eventFiles)
@@ -98,7 +100,56 @@ internal sealed class TempSessionContextTest
         }
     }
 
-    private static async Task<StartSessionModel> getSingleStartSession(IServiceProvider sp)
+    [Test]
+    public async Task RunBenchMark()
+    {
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        await Benchmark.RunOldVersion(1000);
+        stopwatch.Stop();
+        Console.WriteLine($"Time Elapsed: {stopwatch.Elapsed}");
+        var sp = Setup();
+        var tempLog = sp.GetRequiredService<TempLogV1>();
+        await ProcessFiles(tempLog);
+    }
+
+    private static async Task ProcessFiles(TempLogV1 tempLog)
+    {
+        var startSessionFiles = tempLog.StartSessionFiles(DateTime.Now);
+        Console.WriteLine($"Start Sessions: {startSessionFiles.Count()}");
+        var startRequestFiles = tempLog.StartRequestFiles(DateTime.Now);
+        Console.WriteLine($"Start Requests: {startRequestFiles.Count()}");
+        var endRequestFiles = tempLog.EndRequestFiles(DateTime.Now);
+        Console.WriteLine($"End Requests: {endRequestFiles.Count()}");
+        var endSessionFiles = tempLog.EndSessionFiles(DateTime.Now);
+        Console.WriteLine($"End Sessions: {endSessionFiles.Count()}");
+        foreach (var logFile in startSessionFiles)
+        {
+            var contents = await logFile.Read();
+            contents.WriteToConsole();
+            logFile.Delete();
+        }
+        foreach (var logFile in startRequestFiles)
+        {
+            var contents = await logFile.Read();
+            contents.WriteToConsole();
+            logFile.Delete();
+        }
+        foreach (var logFile in endRequestFiles)
+        {
+            var contents = await logFile.Read();
+            contents.WriteToConsole();
+            logFile.Delete();
+        }
+        foreach (var logFile in endSessionFiles)
+        {
+            var contents = await logFile.Read();
+            contents.WriteToConsole();
+            logFile.Delete();
+        }
+    }
+
+    private static async Task<StartSessionModel> GetSingleStartSession(IServiceProvider sp)
     {
         var tempLog = sp.GetRequiredService<TempLogV1>();
         var files = tempLog.StartSessionFiles(DateTime.Now).ToArray();
@@ -107,66 +158,35 @@ internal sealed class TempSessionContextTest
         return XtiSerializer.Deserialize<StartSessionModel>(serializedStartSession);
     }
 
-    private static AppDataFolder getTempLogFolder(IServiceProvider sp)
-    {
-        return sp.GetRequiredService<AppDataFolder>().WithSubFolder("TempLogs");
-    }
+    private static AppDataFolder GetTempLogFolder(IServiceProvider sp) =>
+        sp.GetRequiredService<AppDataFolder>()
+            .WithSubFolder("TempLogs");
 
-    private IServiceProvider setup()
+    private IServiceProvider Setup()
     {
         var hostBuilder = new XtiHostBuilder();
         hostBuilder.Services.AddMemoryCache();
         hostBuilder.Services.AddScoped<IClock, UtcClock>();
-        hostBuilder.Services.AddScoped<IAppEnvironmentContext, TestAppEnvironmentContext>();
+        hostBuilder.Services.AddScoped<IAppEnvironmentContext, FakeAppEnvironmentContext>();
         hostBuilder.Services.AddSingleton<CurrentSession>();
         hostBuilder.Services.AddSingleton<XtiFolder>();
         hostBuilder.Services.AddSingleton
         (
             sp =>
                 sp.GetRequiredService<XtiFolder>()
-                    .SharedAppDataFolder()
-                    .WithSubFolder("TestTempLog")
+                    .AppDataFolder()
+                    .WithSubFolder("OldVersion")
         );
         hostBuilder.Services.AddXtiDataProtection();
         hostBuilder.Services.AddTempLogServices();
+        hostBuilder.Services.AddScoped<TempLogV1>(sp =>
+        {
+            var dataProtector = sp.GetDataProtector("XTI_TempLog");
+            var appDataFolder = sp.GetRequiredService<AppDataFolder>();
+            return new DiskTempLogV1(dataProtector, appDataFolder.WithSubFolder("TempLogs").Path());
+        });
+        hostBuilder.Services.AddScoped<TempLogSessionV1>();
         var host = hostBuilder.Build();
-        deleteTempLogFolder(host.GetRequiredService<AppDataFolder>());
         return host.Scope();
-    }
-
-    private void deleteTempLogFolder(AppDataFolder appDataFolder)
-    {
-        var dir = appDataFolder.Path();
-        if (Directory.Exists(dir))
-        {
-            foreach (var file in Directory.GetFiles(dir))
-            {
-                File.Delete(file);
-            }
-            foreach (var childDir in Directory.GetDirectories(dir))
-            {
-                foreach (var childFile in Directory.GetFiles(childDir))
-                {
-                    File.Delete(childFile);
-                }
-                Directory.Delete(childDir);
-            }
-            Directory.Delete(dir);
-        }
-    }
-
-    private sealed class TestAppEnvironmentContext : IAppEnvironmentContext
-    {
-        private readonly AppEnvironment appEnv;
-
-        public TestAppEnvironmentContext()
-        {
-            appEnv = new AppEnvironment
-            (
-                "test.user", "my-computer", "10.1.0.0", "Windows 10", 123
-            );
-        }
-
-        public Task<AppEnvironment> Value() => Task.FromResult(appEnv);
     }
 }

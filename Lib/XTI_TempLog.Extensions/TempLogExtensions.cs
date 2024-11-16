@@ -11,13 +11,19 @@ public static class TempLogExtensions
     {
         services.AddConfigurationOptions<TempLogOptions>(TempLogOptions.TempLog);
         services.AddThrottledLog((sp, b) => { });
-        services.AddScoped<TempLogV1>(sp =>
+        services.AddSingleton<TempLog>(sp =>
         {
             var dataProtector = sp.GetDataProtector("XTI_TempLog");
-            var appDataFolder = sp.GetRequiredService<AppDataFolder>();
-            return new DiskTempLogV1(dataProtector, appDataFolder.WithSubFolder("TempLogs").Path());
+            var xtiFolder = sp.GetRequiredService<XtiFolder>();
+            return new DiskTempLog(dataProtector, xtiFolder.AppDataFolder().WithSubFolder("TempLogs").Path());
         });
-        services.AddScoped<TempLogSessionV1>();
+        services.AddSingleton<TempLogRepository>();
+        services.AddScoped<TempLogSession>();
+    }
+
+    public static void AddTempLogWriterHostedService(this IServiceCollection services)
+    {
+        services.AddHostedService<TempLogWriterHostedService>();
     }
 
     public static void AddThrottledLog(this IServiceCollection services, Action<IServiceProvider, ThrottledLogsBuilder> action)

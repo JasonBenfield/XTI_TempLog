@@ -1,8 +1,9 @@
 ﻿namespace XTI_TempLog.Abstractions;
 
-public sealed class LogEntryModel
+public sealed class LogEntryModelV1
 {
     private string eventKey = "";
+    private string requestKey = "";
     private string caption = "";
     private string message = "";
     private string detail = "";
@@ -13,6 +14,12 @@ public sealed class LogEntryModel
     {
         get => eventKey;
         set => eventKey = value ?? "";
+    }
+
+    public string RequestKey
+    {
+        get => requestKey;
+        set => requestKey = value ?? "";
     }
 
     public int Severity { get; set; }

@@ -4,7 +4,7 @@ public sealed class LogBatchModel
 {
     private StartSessionModel[] startSessions = new StartSessionModel[0];
     private StartRequestModel[] startRequests = new StartRequestModel[0];
-    private LogEntryModel[] logEntries = new LogEntryModel[0];
+    private LogEntryModelV1[] logEntries = new LogEntryModelV1[0];
     private EndRequestModel[] endRequests = new EndRequestModel[0];
     private AuthenticateSessionModel[] authenticateSessions = new AuthenticateSessionModel[0];
     private EndSessionModel[] endSessions = new EndSessionModel[0];
@@ -21,10 +21,10 @@ public sealed class LogBatchModel
         set => startRequests = value ?? new StartRequestModel[0];
     }
 
-    public LogEntryModel[] LogEntries
+    public LogEntryModelV1[] LogEntries
     {
         get => logEntries;
-        set => logEntries = value ?? new LogEntryModel[0];
+        set => logEntries = value ?? new LogEntryModelV1[0];
     }
 
     public EndRequestModel[] EndRequests
