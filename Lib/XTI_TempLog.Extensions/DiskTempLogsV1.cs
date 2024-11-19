@@ -2,23 +2,23 @@
 
 namespace XTI_TempLog.Extensions;
 
-public sealed class DiskTempLogs : ITempLogs
+public sealed class DiskTempLogsV1 : ITempLogsV1
 {
     private readonly IDataProtector dataProtector;
     private readonly string topLevelPath;
     private readonly string directoryName;
 
-    public DiskTempLogs(IDataProtector dataProtector, string topLevelPath, string directoryName)
+    public DiskTempLogsV1(IDataProtector dataProtector, string topLevelPath, string directoryName)
     {
         this.dataProtector = dataProtector;
         this.topLevelPath = topLevelPath;
         this.directoryName = directoryName;
     }
 
-    public IEnumerable<TempLog> Logs()
+    public IEnumerable<TempLogV1> Logs()
     {
         var paths = findTempLogPaths(topLevelPath);
-        return paths.Select(path => new DiskTempLog(dataProtector, path));
+        return paths.Select(path => new DiskTempLogV1(dataProtector, path));
     }
 
     private IEnumerable<string> findTempLogPaths(string parentDirectoryPath)

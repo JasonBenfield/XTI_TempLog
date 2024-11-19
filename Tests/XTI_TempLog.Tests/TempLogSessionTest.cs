@@ -11,210 +11,326 @@ namespace XTI_TempLog.Tests;
 internal sealed class TempLogSessionTest
 {
     [Test]
-    public async Task ShouldWriteSessionToLog_WhenStartingASession()
+    public async Task ShouldLogSession_WhenStartingSession()
     {
-        var services = setup();
-        var tempLogSession = getTempLogSession(services);
+        var sp = Setup();
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
-        var startSession = await getSingleStartSession(services);
-        Assert.That(string.IsNullOrWhiteSpace(startSession.SessionKey), Is.False, "Should create session key");
-        var clock = getClock(services);
-        Assert.That(startSession.TimeStarted, Is.EqualTo(clock.Now()), "Should start session");
-        var appEnvironmentContext = getAppEnvironmentContext(services);
-        Assert.That(startSession.UserName, Is.EqualTo(appEnvironmentContext.Environment.UserName), "Should set user name from environment");
-        Assert.That(startSession.RequesterKey, Is.EqualTo(appEnvironmentContext.Environment.RequesterKey), "Should set requester key from environment");
-        Assert.That(startSession.UserAgent, Is.EqualTo(appEnvironmentContext.Environment.UserAgent), "Should set user agent from environment");
-        Assert.That(startSession.RemoteAddress, Is.EqualTo(appEnvironmentContext.Environment.RemoteAddress), "Should set remote address from environment");
-    }
-
-    private async Task<StartSessionModel> getSingleStartSession(IServiceProvider services)
-    {
-        var tempLog = getTempLog(services);
-        var files = tempLog.StartSessionFiles(DateTime.Now).ToArray();
-        Assert.That(files.Length, Is.EqualTo(1), "Should be one start session file");
-        var serializedStartSession = await files[0].Read();
-        return XtiSerializer.Deserialize<StartSessionModel>(serializedStartSession);
+        var logFiles = await WriteLogFiles(sp);
+        Assert.That(logFiles.Length, Is.EqualTo(1));
+        var sessionDetails = await logFiles[0].Read();
+        Assert.That(sessionDetails.Length, Is.EqualTo(1), "Should log session when starting session");
+        Assert.That(sessionDetails[0].Session.SessionKey, Is.Not.EqualTo(""), "Should log session when starting session");
+        Assert.That(sessionDetails[0].Session.UserName, Is.EqualTo("test.user"), "Should log session when starting session");
     }
 
     [Test]
-    public async Task ShouldWriteRequestToLog_WhenStartingARequest()
+    public async Task ShouldLog_WhenSessionEnds()
     {
-        var services = setup();
-        var tempLogSession = getTempLogSession(services);
+        var sp = Setup();
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
-        var path = "group1/action1";
-        await tempLogSession.StartRequest(path);
-        var startSession = await getSingleStartSession(services);
-        var startRequest = await getSingleStartRequest(services);
-        Assert.That(startRequest.SessionKey, Is.EqualTo(startSession.SessionKey), "Should create session key");
-        var clock = getClock(services);
-        Assert.That(startRequest.TimeStarted, Is.EqualTo(clock.Now()), "Should start session");
-        Assert.That(startRequest.Path, Is.EqualTo(path), "Should set path");
-        Assert.That(string.IsNullOrWhiteSpace(startRequest.RequestKey), Is.False, "Should set request key");
-        Assert.That(startRequest.InstallationID, Is.EqualTo(123), "Should set installation ID from environment");
-    }
-
-    private async Task<StartRequestModel> getSingleStartRequest(IServiceProvider services)
-    {
-        var tempLog = getTempLog(services);
-        var files = tempLog.StartRequestFiles(DateTime.Now).ToArray();
-        Assert.That(files.Length, Is.EqualTo(1), "Should be one start request file");
-        var serializedStartRequest = await files[0].Read();
-        return XtiSerializer.Deserialize<StartRequestModel>(serializedStartRequest);
-    }
-
-    [Test]
-    public async Task ShouldWriteRequestToLog_WhenEndingARequest()
-    {
-        var services = setup();
-        var tempLogSession = getTempLogSession(services);
-        await tempLogSession.StartSession();
-        var path = "group1/action1";
-        await tempLogSession.StartRequest(path);
-        var clock = getClock(services);
-        clock.Add(TimeSpan.FromMinutes(1));
-        await tempLogSession.EndRequest();
-        var endRequest = await getSingleEndRequest(services);
-        var startRequest = await getSingleStartRequest(services);
-        Assert.That(endRequest.RequestKey, Is.EqualTo(startRequest.RequestKey), "Request key should be the same as the start request");
-        Assert.That(endRequest.TimeEnded, Is.EqualTo(clock.Now()), "Should set the end time");
-    }
-
-    private async Task<EndRequestModel> getSingleEndRequest(IServiceProvider services)
-    {
-        var tempLog = getTempLog(services);
-        var clock = getClock(services);
-        var files = tempLog.EndRequestFiles(clock.Now()).ToArray();
-        Assert.That(files.Length, Is.EqualTo(1), "Should be one end request file");
-        var serializedEndRequest = await files[0].Read();
-        return XtiSerializer.Deserialize<EndRequestModel>(serializedEndRequest);
-    }
-
-    [Test]
-    public async Task ShouldWriteSessionToLog_WhenEndingASession()
-    {
-        var services = setup();
-        var tempLogSession = getTempLogSession(services);
-        await tempLogSession.StartSession();
-        var path = "group1/action1";
-        await tempLogSession.StartRequest(path);
-        var clock = getClock(services);
-        clock.Add(TimeSpan.FromMinutes(1));
-        await tempLogSession.EndRequest();
+        using var scope = sp.CreateScope();
+        var requestTempLogSession = scope.ServiceProvider.GetRequiredService<TempLogSession>();
+        await requestTempLogSession.StartRequest("/Test/Current");
+        await requestTempLogSession.EndRequest();
         await tempLogSession.EndSession();
-        var endSession = await getSingleEndSession(services);
-        var startSession = await getSingleStartSession(services);
-        Assert.That(endSession.SessionKey, Is.EqualTo(startSession.SessionKey), "Should have the same session key as the start session");
-        Assert.That(endSession.TimeEnded, Is.EqualTo(clock.Now()), "Should set time ended");
-    }
-
-    private async Task<EndSessionModel> getSingleEndSession(IServiceProvider services)
-    {
-        var tempLog = getTempLog(services);
-        var clock = getClock(services);
-        var files = tempLog.EndSessionFiles(clock.Now()).ToArray();
-        Assert.That(files.Length, Is.EqualTo(1), "Should be one end session file");
-        var serializedEndSession = await files[0].Read();
-        return XtiSerializer.Deserialize<EndSessionModel>(serializedEndSession);
+        var logFiles = await WriteLogFiles(sp);
+        var sessionDetails = await GetSessionDetails(logFiles);
+        var sessionDetail = sessionDetails.LastOrDefault() ?? new();
+        var clock = sp.GetRequiredService<IClock>();
+        Assert.That(sessionDetail.Session.TimeEnded, Is.EqualTo(clock.Now()), "Should log when session ends");
     }
 
     [Test]
-    public async Task ShouldAuthenticateSession()
+    public async Task ShouldLogSession_WhenAuthenticatingSession()
     {
-        var services = setup();
-        var tempLogSession = getTempLogSession(services);
-        await tempLogSession.StartSession();
-        var userName = "test.user";
-        await tempLogSession.AuthenticateSession(userName);
-        var authSession = await getSingleAuthSession(services);
-        var startSession = await getSingleStartSession(services);
-        Assert.That(authSession.SessionKey, Is.EqualTo(startSession.SessionKey), "Should have the same session key as the start session");
-        Assert.That(authSession.UserName, Is.EqualTo(userName), "Should set user name");
-    }
-
-    private async Task<AuthenticateSessionModel> getSingleAuthSession(IServiceProvider services)
-    {
-        var tempLog = getTempLog(services);
-        var clock = getClock(services);
-        var files = tempLog.AuthSessionFiles(clock.Now()).ToArray();
-        Assert.That(files.Length, Is.EqualTo(1), "Should be one auth session file");
-        var serializedAuthSession = await files[0].Read();
-        return XtiSerializer.Deserialize<AuthenticateSessionModel>(serializedAuthSession);
+        var sp = Setup();
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        await tempLogSession.AuthenticateSession("someone.else");
+        var logFiles = await WriteLogFiles(sp);
+        Assert.That(logFiles.Length, Is.EqualTo(1));
+        var sessionDetails = await logFiles[0].Read();
+        Assert.That(sessionDetails.Length, Is.EqualTo(1), "Should log session when starting session");
+        Assert.That(sessionDetails[0].Session.SessionKey, Is.Not.EqualTo(""), "Should log session when starting session");
+        Assert.That(sessionDetails[0].Session.UserName, Is.EqualTo("someone.else"), "Should log session when authenticating session");
     }
 
     [Test]
-    public async Task ShouldLogError()
+    public async Task ShouldReplaceAnonUser_WhenAuthenticatingSession()
     {
-        var services = setup();
-        var tempLogSession = getTempLogSession(services);
+        var sp = Setup();
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        var appEnv = sp.GetRequiredService<FakeAppEnvironmentContext>();
+        appEnv.Environment = appEnv.Environment with { UserName = "xti_anon" };
+        await tempLogSession.StartRequest("/Test/Current");
+        await tempLogSession.AuthenticateSession("someone.else");
+        var logFiles = await WriteLogFiles(sp);
+        Assert.That(logFiles.Length, Is.EqualTo(1));
+        var sessionDetails = await logFiles[0].Read();
+        Assert.That(sessionDetails.Length, Is.EqualTo(1), "Should log session when starting session");
+        Assert.That(sessionDetails[0].Session.UserName, Is.EqualTo("someone.else"), "Should log session when authenticating session");
+    }
+
+    [Test]
+    public async Task ShouldReplaceAnonUser_WhenLoggingRequests()
+    {
+        var sp = Setup();
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        var appEnv = sp.GetRequiredService<FakeAppEnvironmentContext>();
+        appEnv.Environment = appEnv.Environment with { UserName = "xti_anon" };
+        await tempLogSession.StartRequest("/Test/Current1");
+        appEnv.Environment = appEnv.Environment with { UserName = "test.user" };
+        await tempLogSession.StartRequest("/Test/Current2");
+        var logFiles = await WriteLogFiles(sp);
+        Assert.That(logFiles.Length, Is.EqualTo(1));
+        var sessionDetails = await logFiles[0].Read();
+        Assert.That(sessionDetails.Length, Is.EqualTo(1), "Should log session when starting session");
+        Assert.That(sessionDetails[0].Session.UserName, Is.EqualTo("test.user"), "Should log session when authenticating session");
+    }
+
+    [Test]
+    public async Task ShouldLogSession_WhenStartingRequest()
+    {
+        var sp = Setup();
+        var currentSession = sp.GetRequiredService<CurrentSession>();
+        currentSession.SessionKey = "Session1";
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        await tempLogSession.StartRequest("/Test/Current");
+        var logFiles = await WriteLogFiles(sp);
+        Assert.That(logFiles.Length, Is.EqualTo(1));
+        var sessionDetails = await logFiles[0].Read();
+        Assert.That(sessionDetails.Length, Is.EqualTo(1), "Should log session when starting request");
+        Assert.That(sessionDetails[0].Session.SessionKey, Is.EqualTo("Session1"), "Should log session when starting request");
+        Assert.That(sessionDetails[0].Session.UserName, Is.EqualTo("test.user"), "Should log session when starting request");
+    }
+
+    [Test]
+    public async Task ShouldAddRequest_WhenStartingRequest()
+    {
+        var sp = Setup();
+        var currentSession = sp.GetRequiredService<CurrentSession>();
+        currentSession.SessionKey = "Session1";
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        await tempLogSession.StartRequest("/Test/Current");
+        var logFiles = await WriteLogFiles(sp);
+        var sessionDetails = await logFiles[0].Read();
+        var request = sessionDetails
+            .FirstOrDefault()?.RequestDetails
+            .FirstOrDefault()?.Request ??
+            new();
+        var clock = sp.GetRequiredService<IClock>();
+        Assert.That(request.RequestKey, Is.Not.EqualTo(""), "Should add request when starting request");
+        Assert.That(request.Path, Is.EqualTo("/Test/Current"), "Should add request when starting request");
+        Assert.That(request.TimeStarted, Is.EqualTo(clock.Now()), "Should add request when starting request");
+    }
+
+    [Test]
+    public async Task ShouldUpdateTimeEnded_WhenEndingRequest()
+    {
+        var sp = Setup();
+        var currentSession = sp.GetRequiredService<CurrentSession>();
+        currentSession.SessionKey = "Session1";
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        await tempLogSession.StartRequest("/Test/Current");
+        await tempLogSession.EndRequest();
+        var logFiles = await WriteLogFiles(sp);
+        var sessionDetails = await logFiles[0].Read();
+        var request = sessionDetails
+            .FirstOrDefault()?.RequestDetails
+            .FirstOrDefault()?.Request ??
+            new();
+        var clock = sp.GetRequiredService<IClock>();
+        Assert.That(request.TimeEnded, Is.EqualTo(clock.Now()), "Should log session when starting request");
+    }
+
+    [Test]
+    public async Task ShouldUpdateTimeEnded_WhenEndingSession()
+    {
+        var sp = Setup();
+        var currentSession = sp.GetRequiredService<CurrentSession>();
+        currentSession.SessionKey = "Session1";
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        await tempLogSession.EndSession();
+        var logFiles = await WriteLogFiles(sp);
+        var sessionDetails = await logFiles[0].Read();
+        var session = sessionDetails
+            .FirstOrDefault()?.Session ??
+            new();
+        var clock = sp.GetRequiredService<IClock>();
+        Assert.That(session.TimeEnded, Is.EqualTo(clock.Now()), "Should update time ended when ending session");
+    }
+
+    [Test]
+    public async Task ShouldAddLogEntry_WhenLoggingInformation()
+    {
+        var sp = Setup();
+        var currentSession = sp.GetRequiredService<CurrentSession>();
+        currentSession.SessionKey = "Session1";
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        await tempLogSession.StartRequest("/Test/Current");
+        await tempLogSession.LogInformation("Caption", "Message");
+        var logFiles = await WriteLogFiles(sp);
+        var sessionDetails = await logFiles[0].Read();
+        var logEntry = sessionDetails
+            .FirstOrDefault()?.RequestDetails?
+            .FirstOrDefault()?.LogEntries
+            .FirstOrDefault() ??
+            new();
+        Assert.That(logEntry.Caption, Is.EqualTo("Caption"), "Should add log entry when logging information");
+        var clock = sp.GetRequiredService<IClock>();
+        Assert.That(logEntry.TimeOccurred, Is.EqualTo(clock.Now()), "Should add log entry when logging information");
+    }
+
+    [Test]
+    public async Task ShouldClearSessions_AfterWritingToLocalStorage()
+    {
+        var sp = Setup();
+        var currentSession = sp.GetRequiredService<CurrentSession>();
+        currentSession.SessionKey = "Session1";
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        await tempLogSession.StartRequest("/Test/Current");
+        await tempLogSession.EndRequest();
+        var logFiles = await WriteLogFiles(sp);
+        foreach (var logFile in logFiles)
+        {
+            logFile.Delete();
+        }
+        logFiles = await WriteLogFiles(sp);
+        Assert.That(logFiles.Length, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task ShouldLogRequest_WhenRequestIsStartedAfterWritingLog()
+    {
+        var sp = Setup();
+        var currentSession = sp.GetRequiredService<CurrentSession>();
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
-        var path = "group1/action1";
-        await tempLogSession.StartRequest(path);
-        Exception thrownException;
-        try
+        var logFiles = await WriteLogFiles(sp);
+        foreach (var logFile in logFiles)
         {
-            throw new Exception("Test");
+            logFile.Delete();
         }
-        catch (Exception ex)
-        {
-            await tempLogSession.LogException
-            (
-                AppEventSeverity.Values.CriticalError,
-                ex,
-                "An unexpected error occurred",
-                ""
-            );
-            thrownException = ex;
-        }
-        var tempLog = getTempLog(services);
-        var clock = getClock(services);
-        var requestFiles = tempLog.StartRequestFiles(clock.Now()).ToArray();
-        var request = XtiSerializer.Deserialize<StartRequestModel>(await requestFiles[0].Read());
-        var logEvent = await getSingleLogEvent(services);
-        Assert.That(string.IsNullOrWhiteSpace(logEvent.EventKey), Is.False, "Should create event key");
-        Assert.That(logEvent.RequestKey, Is.EqualTo(request.RequestKey), "Should set request key");
-        Assert.That(logEvent.Severity, Is.EqualTo(AppEventSeverity.Values.CriticalError.Value), "Should set severity");
-        Assert.That(logEvent.Caption, Is.EqualTo("An unexpected error occurred"), "Should set caption");
-        Assert.That(logEvent.Message, Is.EqualTo(thrownException.Message), "Should set message");
-        Assert.That(logEvent.Detail, Is.EqualTo(thrownException.StackTrace), "Should set detail");
-        Assert.That(logEvent.TimeOccurred, Is.EqualTo(clock.Now()), "Should set time occurred to the current time");
+        await tempLogSession.StartRequest("/Test/Current");
+        logFiles = await WriteLogFiles(sp);
+        var sessionDetails = await logFiles[0].Read();
+        var session = sessionDetails.FirstOrDefault()?.Session ?? new();
+        Assert.That(session.SessionKey, Is.Not.EqualTo(""));
+        Assert.That(session.UserName, Is.EqualTo("test.user"));
+        var clock = sp.GetRequiredService<IClock>();
+        Assert.That(session.TimeStarted, Is.EqualTo(clock.Now()));
+        var request = sessionDetails
+            .FirstOrDefault()?.RequestDetails
+            .FirstOrDefault()?
+            .Request ?? new();
+        Assert.That(request.RequestKey, Is.Not.EqualTo(""));
+        Assert.That(request.Path, Is.EqualTo("/Test/Current"));
+        Assert.That(request.TimeStarted, Is.EqualTo(clock.Now()));
     }
 
-    private async Task<LogEntryModel> getSingleLogEvent(IServiceProvider services)
+    [Test]
+    public async Task ShouldEndRequest_WhenRequestIsEndedAfterWritingLog()
     {
-        var tempLog = getTempLog(services);
-        var files = tempLog.LogEventFiles(DateTime.Now).ToArray();
-        Assert.That(files.Length, Is.EqualTo(1), "Should be one log event file");
-        var serializedLogEvent = await files[0].Read();
-        return XtiSerializer.Deserialize<LogEntryModel>(serializedLogEvent);
+        var sp = Setup();
+        var currentSession = sp.GetRequiredService<CurrentSession>();
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        await tempLogSession.StartRequest("/Test/Current");
+        var logFiles = await WriteLogFiles(sp);
+        foreach (var logFile in logFiles)
+        {
+            logFile.Delete();
+        }
+        await tempLogSession.EndRequest();
+        logFiles = await WriteLogFiles(sp);
+        var sessionDetails = await logFiles[0].Read();
+        var request = sessionDetails
+            .FirstOrDefault()?.RequestDetails
+            .FirstOrDefault()?
+            .Request ?? new();
+        Assert.That(request.RequestKey, Is.Not.EqualTo(""));
+        Assert.That(request.Path, Is.EqualTo("/Test/Current"));
+        var clock = sp.GetRequiredService<IClock>();
+        Assert.That(request.TimeStarted, Is.EqualTo(clock.Now()));
+        Assert.That(request.TimeEnded, Is.EqualTo(clock.Now()));
     }
 
-    private IServiceProvider setup()
+    [Test]
+    public async Task ShouldAddLogEntry_WhenLoggingInformationAfterWritingLog()
+    {
+        var sp = Setup();
+        var currentSession = sp.GetRequiredService<CurrentSession>();
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        await tempLogSession.StartRequest("/Test/Current");
+        var logFiles = await WriteLogFiles(sp);
+        await tempLogSession.LogInformation("Caption", "Message");
+        foreach (var logFile in logFiles)
+        {
+            logFile.Delete();
+        }
+        logFiles = await WriteLogFiles(sp);
+        var sessionDetails = await logFiles[0].Read();
+        var session = sessionDetails.FirstOrDefault()?.Session ?? new();
+        Assert.That(session.SessionKey, Is.Not.EqualTo(""));
+        Assert.That(session.UserName, Is.EqualTo("test.user"));
+        var clock = sp.GetRequiredService<IClock>();
+        Assert.That(session.TimeStarted, Is.EqualTo(clock.Now()));
+        var request = sessionDetails
+            .FirstOrDefault()?.RequestDetails
+            .FirstOrDefault()?
+            .Request ?? new();
+        Assert.That(request.RequestKey, Is.Not.EqualTo(""));
+        Assert.That(request.Path, Is.EqualTo("/Test/Current"));
+        Assert.That(request.TimeStarted, Is.EqualTo(clock.Now()));
+        var logEntry = sessionDetails
+            .FirstOrDefault()?.RequestDetails?
+            .FirstOrDefault()?.LogEntries
+            .FirstOrDefault() ??
+            new();
+        Assert.That(logEntry.Caption, Is.EqualTo("Caption"), "Should add log entry when logging information");
+        Assert.That(logEntry.TimeOccurred, Is.EqualTo(clock.Now()), "Should add log entry when logging information");
+    }
+
+    private IServiceProvider Setup()
     {
         Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Test");
         var hostBuilder = new XtiHostBuilder();
         hostBuilder.Services.AddMemoryCache();
         hostBuilder.Services.AddFakeTempLogServices();
         hostBuilder.Services.AddSingleton<IClock, FakeClock>();
-        hostBuilder.Services.AddScoped<IAppEnvironmentContext>(sp => new FakeAppEnvironmentContext
-        {
-            Environment = new AppEnvironment
-            (
-                "test.user", "my-computer", "10.1.0.0", "Windows 10", 123
-            )
-        });
+        hostBuilder.Services.AddSingleton
+        (
+            sp => new FakeAppEnvironmentContext
+            {
+                Environment = new AppEnvironment
+                (
+                    "test.user", "my-computer", "10.1.0.0", "Windows 10", 123
+                )
+            }
+        );
+        hostBuilder.Services.AddSingleton<IAppEnvironmentContext>(sp => sp.GetRequiredService<FakeAppEnvironmentContext>());
         var host = hostBuilder.Build();
         return host.Scope();
     }
 
-    private TempLogSession getTempLogSession(IServiceProvider sp)
-        => sp.GetRequiredService<TempLogSession>();
+    private static async Task<ITempLogFile[]> WriteLogFiles(IServiceProvider sp)
+    {
+        var tempLogRepo = sp.GetRequiredService<TempLogRepository>();
+        await tempLogRepo.WriteToLocalStorage();
+        var tempLog = sp.GetRequiredService<TempLog>();
+        var logFiles = tempLog.Files(DateTime.Now, 100);
+        return logFiles;
+    }
 
-    private FakeTempLog getTempLog(IServiceProvider sp)
-        => (FakeTempLog)sp.GetRequiredService<TempLog>();
+    private static async Task<TempLogSessionDetailModel[]> GetSessionDetails(ITempLogFile[] logFiles)
+    {
+        var sessionDetails = new List<TempLogSessionDetailModel>();
+        foreach (var logFile in logFiles)
+        {
+            var fileSessionDetails = await logFile.Read();
+            sessionDetails.AddRange(fileSessionDetails);
+        }
+        return sessionDetails.ToArray();
+    }
 
-    private FakeAppEnvironmentContext getAppEnvironmentContext(IServiceProvider sp)
-        => (FakeAppEnvironmentContext)sp.GetRequiredService<IAppEnvironmentContext>();
-
-    private FakeClock getClock(IServiceProvider sp) => (FakeClock)sp.GetRequiredService<IClock>();
 }

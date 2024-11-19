@@ -1,4 +1,4 @@
-﻿namespace XTI_TempLog.Fakes;
+﻿namespace XTI_TempLog.Abstractions;
 
 public sealed class FakeAppEnvironmentContext : IAppEnvironmentContext
 {
