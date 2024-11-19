@@ -29,7 +29,11 @@ public sealed class TempLogWriterHostedService : IHostedService
         var t = autoWriteTask;
         if(t != null)
         {
-            await t.WaitAsync(TimeSpan.FromSeconds(5));
+            try
+            {
+                await t.WaitAsync(TimeSpan.FromMinutes(1));
+            }
+            catch { }
         }
     }
 }
