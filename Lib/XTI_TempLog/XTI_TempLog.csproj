@@ -13,7 +13,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="XTI_Core" Version="1.10.22-dev241112213612939" />
+		<PackageReference Include="XTI_Core" Version="1.10.22" />
 	</ItemGroup>
 
 	<ItemGroup>

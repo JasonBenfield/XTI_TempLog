@@ -12,8 +12,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="XTI_Secrets" Version="1.8.11-dev241112213806362" />
-		<PackageReference Include="XTI_Core.Extensions" Version="1.10.22-dev241112213612939" />
+		<PackageReference Include="XTI_Secrets" Version="1.8.11" />
+		<PackageReference Include="XTI_Core.Extensions" Version="1.10.22" />
 	</ItemGroup>
 
 	<ItemGroup>
