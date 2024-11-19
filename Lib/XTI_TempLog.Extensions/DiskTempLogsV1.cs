@@ -29,9 +29,13 @@ public sealed class DiskTempLogsV1 : ITempLogsV1
             var childDirectoryPaths = Directory.GetDirectories(parentDirectoryPath);
             foreach (var childDirectoryPath in childDirectoryPaths)
             {
-                if (new DirectoryInfo(childDirectoryPath).Name.Equals(directoryName, StringComparison.OrdinalIgnoreCase))
+                var childDirInfo = new DirectoryInfo(childDirectoryPath);
+                if (childDirInfo.Name.Equals(directoryName, StringComparison.OrdinalIgnoreCase))
                 {
-                    tempLogDirectories.Add(childDirectoryPath);
+                    if (!parentDirectoryPath.Equals(topLevelPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        tempLogDirectories.Add(childDirectoryPath);
+                    }
                 }
                 else
                 {
