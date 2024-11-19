@@ -14,6 +14,14 @@ namespace XTI_TempLog.IntegrationTests;
 internal sealed class TempLogSessionV1Test
 {
     [Test]
+    public void ShouldGetFiles()
+    {
+        var sp = Setup();
+        var tempLogs = sp.GetRequiredService<ITempLogsV1>();
+        var logs = tempLogs.Logs();
+    }
+
+    [Test]
     public async Task ShouldWriteFileToTempLog()
     {
         var sp = Setup();
@@ -184,6 +192,12 @@ internal sealed class TempLogSessionV1Test
             var dataProtector = sp.GetDataProtector("XTI_TempLog");
             var appDataFolder = sp.GetRequiredService<AppDataFolder>();
             return new DiskTempLogV1(dataProtector, appDataFolder.WithSubFolder("TempLogs").Path());
+        });
+        hostBuilder.Services.AddScoped<ITempLogsV1>(sp =>
+        {
+            var dataProtector = sp.GetDataProtector("XTI_TempLog");
+            var appDataFolder = sp.GetRequiredService<XtiFolder>().AppDataFolder();
+            return new DiskTempLogsV1(dataProtector, appDataFolder.Path(), "TempLogs");
         });
         hostBuilder.Services.AddScoped<TempLogSessionV1>();
         var host = hostBuilder.Build();
