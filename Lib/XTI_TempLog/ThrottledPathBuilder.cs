@@ -4,8 +4,8 @@ public sealed class ThrottledPathBuilder
 {
     private readonly ThrottledLogsBuilder builder;
     private string path = "";
-    private TimeSpan requestInterval = new TimeSpan();
-    private TimeSpan exceptionInterval = new TimeSpan();
+    private TimeSpan requestInterval = new();
+    private TimeSpan exceptionInterval = new();
 
     public ThrottledPathBuilder(ThrottledLogsBuilder builder)
     {

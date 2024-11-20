@@ -22,7 +22,7 @@ public sealed class ThrottledLogsBuilder
 
     public ThrottledLogsBuilder ApplyOptions(TempLogOptions options)
     {
-        var throttles = options?.Throttles ?? new TempLogThrottleOptions[0];
+        var throttles = options?.Throttles ?? [];
         foreach (var throttleOption in throttles)
         {
             Throttle(throttleOption.Path)
