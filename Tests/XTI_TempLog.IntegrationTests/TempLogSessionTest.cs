@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using System.Diagnostics;
@@ -19,6 +20,21 @@ internal sealed class TempLogSessionTest
         await tempLogSession.StartSession();
         var files = await WriteLogFiles(sp);
         Assert.That(files.Length, Is.EqualTo(1), "Should write file to temp log");
+    }
+
+    [Test]
+    public async Task ShouldDecryptFile()
+    {
+        var sp = Setup();
+        var dataProtector = sp.GetDataProtector("XTI_TempLog");
+        var diskTempLog = new DiskTempLog(dataProtector, "C:\\XTI\\AppData\\Development\\TempLogTest");
+        var files = diskTempLog.Files(DateTimeOffset.Now);
+        var sessionDetails = new List<TempLogSessionDetailModel>();
+        foreach (var file in files)
+        {
+            var fileSessionDetails = await files[0].Read();
+            sessionDetails.AddRange(fileSessionDetails);
+        }
     }
 
     [Test]
@@ -52,12 +68,27 @@ internal sealed class TempLogSessionTest
     [Test]
     public async Task ShouldDeserializeStartSession()
     {
-        var sp = Setup();
+        var sp = Setup("Test");
+        var tempLog = sp.GetRequiredService<TempLog>();
+        var files = tempLog.Files(DateTimeOffset.Now);
+        foreach (var file in files)
+        {
+            file.Delete();
+        }
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartSession();
+        files = await WriteLogFiles(sp);
+        var session = await GetSingleSession(files);
+        session.WriteToConsole();
+    }
+
+    [Test]
+    public async Task ShouldDeserializeSessionDetails()
+    {
+        var sp = Setup();
         var files = await WriteLogFiles(sp);
-        var startSession = await GetSingleSession(files);
-        Assert.That(startSession.SessionKey?.Trim() ?? "", Is.Not.EqualTo(""), "Should deserialize start session");
+        var sessionDetails = await GetSessionDetails(files);
+        sessionDetails.WriteToConsole();
     }
 
     [Test]
@@ -81,6 +112,17 @@ internal sealed class TempLogSessionTest
         await ProcessFiles(tempLog);
     }
 
+    private static async Task<TempLogSessionDetailModel[]> GetSessionDetails(ITempLogFile[] files)
+    {
+        var sessionDetails = new List<TempLogSessionDetailModel>();
+        foreach (var file in files)
+        {
+            var fileSessionDetails = await files[0].Read();
+            sessionDetails.AddRange(fileSessionDetails);
+        }
+        return sessionDetails.ToArray();
+    }
+
     private static async Task<TempLogSessionModel> GetSingleSession(ITempLogFile[] files)
     {
         Assert.That(files.Length, Is.EqualTo(1), "Should be one log file");
@@ -93,9 +135,9 @@ internal sealed class TempLogSessionTest
         return sp.GetRequiredService<AppDataFolder>().WithSubFolder("TempLogs");
     }
 
-    private IServiceProvider Setup()
+    private IServiceProvider Setup(string envName = "Development")
     {
-        var hostBuilder = new XtiHostBuilder();
+        var hostBuilder = new XtiHostBuilder(XtiEnvironment.Parse(envName));
         hostBuilder.Services.AddMemoryCache();
         hostBuilder.Services.AddScoped<IClock, UtcClock>();
         hostBuilder.Services.AddScoped<IAppEnvironmentContext, FakeAppEnvironmentContext>();

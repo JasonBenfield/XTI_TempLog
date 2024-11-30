@@ -20,8 +20,8 @@ internal sealed class TempLogSessionTest
         Assert.That(logFiles.Length, Is.EqualTo(1));
         var sessionDetails = await logFiles[0].Read();
         Assert.That(sessionDetails.Length, Is.EqualTo(1), "Should log session when starting session");
-        Assert.That(sessionDetails[0].Session.SessionKey, Is.Not.EqualTo(""), "Should log session when starting session");
-        Assert.That(sessionDetails[0].Session.UserName, Is.EqualTo("test.user"), "Should log session when starting session");
+        Assert.That(sessionDetails[0].Session.SessionKey.ID, Is.Not.EqualTo(""), "Should log session when starting session");
+        Assert.That(sessionDetails[0].Session.SessionKey.UserName, Is.EqualTo("test.user"), "Should log session when starting session");
     }
 
     [Test]
@@ -52,8 +52,8 @@ internal sealed class TempLogSessionTest
         Assert.That(logFiles.Length, Is.EqualTo(1));
         var sessionDetails = await logFiles[0].Read();
         Assert.That(sessionDetails.Length, Is.EqualTo(1), "Should log session when starting session");
-        Assert.That(sessionDetails[0].Session.SessionKey, Is.Not.EqualTo(""), "Should log session when starting session");
-        Assert.That(sessionDetails[0].Session.UserName, Is.EqualTo("someone.else"), "Should log session when authenticating session");
+        Assert.That(sessionDetails[0].Session.SessionKey.ID, Is.Not.EqualTo(""), "Should log session when starting session");
+        Assert.That(sessionDetails[0].Session.SessionKey.UserName, Is.EqualTo("someone.else"), "Should log session when authenticating session");
     }
 
     [Test]
@@ -62,14 +62,35 @@ internal sealed class TempLogSessionTest
         var sp = Setup();
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         var appEnv = sp.GetRequiredService<FakeAppEnvironmentContext>();
-        appEnv.Environment = appEnv.Environment with { UserName = "xti_anon" };
+        appEnv.Environment = appEnv.Environment with { UserName = "" };
+        var currentSession = sp.GetRequiredService<CurrentSession>();
+        currentSession.SessionKey = new SessionKey("Session1", "");
         await tempLogSession.StartRequest("/Test/Current");
         await tempLogSession.AuthenticateSession("someone.else");
         var logFiles = await WriteLogFiles(sp);
         Assert.That(logFiles.Length, Is.EqualTo(1));
         var sessionDetails = await logFiles[0].Read();
         Assert.That(sessionDetails.Length, Is.EqualTo(1), "Should log session when starting session");
-        Assert.That(sessionDetails[0].Session.UserName, Is.EqualTo("someone.else"), "Should log session when authenticating session");
+        Assert.That(sessionDetails[0].Session.SessionKey.ID, Is.EqualTo("Session1"), "Should log session when authenticating session");
+        Assert.That(sessionDetails[0].Session.SessionKey.UserName, Is.EqualTo("someone.else"), "Should log session when authenticating session");
+    }
+
+    [Test]
+    public async Task ShouldCreateNewSessionKey_WhenUserNameDoesNotMatchSessionKey()
+    {
+        var sp = Setup();
+        var tempLogSession = sp.GetRequiredService<TempLogSession>();
+        var appEnv = sp.GetRequiredService<FakeAppEnvironmentContext>();
+        appEnv.Environment = appEnv.Environment with { UserName = "someone.else" };
+        var currentSession = sp.GetRequiredService<CurrentSession>();
+        currentSession.SessionKey = new SessionKey("Session1", "test.user");
+        await tempLogSession.StartRequest("/Test/Current");
+        await tempLogSession.AuthenticateSession("someone.else");
+        var logFiles = await WriteLogFiles(sp);
+        Assert.That(logFiles.Length, Is.EqualTo(1));
+        var sessionDetails = await logFiles[0].Read();
+        Assert.That(sessionDetails.Length, Is.EqualTo(1), "Should log session when starting session");
+        Assert.That(sessionDetails[0].Session.SessionKey.ID, Is.Not.EqualTo("Session1"), "Should use new session key when session key user name does not equal user name");
     }
 
     [Test]
@@ -86,7 +107,7 @@ internal sealed class TempLogSessionTest
         Assert.That(logFiles.Length, Is.EqualTo(1));
         var sessionDetails = await logFiles[0].Read();
         Assert.That(sessionDetails.Length, Is.EqualTo(1), "Should log session when starting session");
-        Assert.That(sessionDetails[0].Session.UserName, Is.EqualTo("test.user"), "Should log session when authenticating session");
+        Assert.That(sessionDetails[0].Session.SessionKey.UserName, Is.EqualTo("test.user"), "Should log session when authenticating session");
     }
 
     [Test]
@@ -94,15 +115,15 @@ internal sealed class TempLogSessionTest
     {
         var sp = Setup();
         var currentSession = sp.GetRequiredService<CurrentSession>();
-        currentSession.SessionKey = "Session1";
+        currentSession.SessionKey = new SessionKey("Session1", "test.user");
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartRequest("/Test/Current");
         var logFiles = await WriteLogFiles(sp);
         Assert.That(logFiles.Length, Is.EqualTo(1));
         var sessionDetails = await logFiles[0].Read();
         Assert.That(sessionDetails.Length, Is.EqualTo(1), "Should log session when starting request");
-        Assert.That(sessionDetails[0].Session.SessionKey, Is.EqualTo("Session1"), "Should log session when starting request");
-        Assert.That(sessionDetails[0].Session.UserName, Is.EqualTo("test.user"), "Should log session when starting request");
+        Assert.That(sessionDetails[0].Session.SessionKey.ID, Is.EqualTo("Session1"), "Should log session when starting request");
+        Assert.That(sessionDetails[0].Session.SessionKey.UserName, Is.EqualTo("test.user"), "Should log session when starting request");
     }
 
     [Test]
@@ -110,7 +131,7 @@ internal sealed class TempLogSessionTest
     {
         var sp = Setup();
         var currentSession = sp.GetRequiredService<CurrentSession>();
-        currentSession.SessionKey = "Session1";
+        currentSession.SessionKey = new SessionKey("Session1", "");
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartRequest("/Test/Current");
         var logFiles = await WriteLogFiles(sp);
@@ -130,7 +151,7 @@ internal sealed class TempLogSessionTest
     {
         var sp = Setup();
         var currentSession = sp.GetRequiredService<CurrentSession>();
-        currentSession.SessionKey = "Session1";
+        currentSession.SessionKey = new SessionKey("Session1", "");
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartRequest("/Test/Current");
         await tempLogSession.EndRequest();
@@ -149,7 +170,7 @@ internal sealed class TempLogSessionTest
     {
         var sp = Setup();
         var currentSession = sp.GetRequiredService<CurrentSession>();
-        currentSession.SessionKey = "Session1";
+        currentSession.SessionKey = new SessionKey("Session1", "");
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartRequest("/Test/Current");
         await ClearLogFiles(sp);
@@ -168,7 +189,7 @@ internal sealed class TempLogSessionTest
     {
         var sp = Setup();
         var currentSession = sp.GetRequiredService<CurrentSession>();
-        currentSession.SessionKey = "Session1";
+        currentSession.SessionKey = new SessionKey("Session1", "");
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartRequest("/Test/Current");
         await ClearLogFiles(sp);
@@ -187,7 +208,7 @@ internal sealed class TempLogSessionTest
     {
         var sp = Setup();
         var currentSession = sp.GetRequiredService<CurrentSession>();
-        currentSession.SessionKey = "Session1";
+        currentSession.SessionKey = new SessionKey("Session1", "");
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.EndSession();
         var logFiles = await WriteLogFiles(sp);
@@ -204,7 +225,7 @@ internal sealed class TempLogSessionTest
     {
         var sp = Setup();
         var currentSession = sp.GetRequiredService<CurrentSession>();
-        currentSession.SessionKey = "Session1";
+        currentSession.SessionKey = new SessionKey("Session1", "");
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartRequest("/Test/Current");
         await tempLogSession.LogInformation("Caption", "Message");
@@ -225,7 +246,7 @@ internal sealed class TempLogSessionTest
     {
         var sp = Setup();
         var currentSession = sp.GetRequiredService<CurrentSession>();
-        currentSession.SessionKey = "Session1";
+        currentSession.SessionKey = new SessionKey("Session1", "");
         var tempLogSession = sp.GetRequiredService<TempLogSession>();
         await tempLogSession.StartRequest("/Test/Current");
         await tempLogSession.EndRequest();
@@ -246,8 +267,8 @@ internal sealed class TempLogSessionTest
         var logFiles = await WriteLogFiles(sp);
         var sessionDetails = await logFiles[0].Read();
         var session = sessionDetails.FirstOrDefault()?.Session ?? new();
-        Assert.That(session.SessionKey, Is.Not.EqualTo(""));
-        Assert.That(session.UserName, Is.EqualTo("test.user"));
+        Assert.That(session.SessionKey.ID, Is.Not.EqualTo(""));
+        Assert.That(session.SessionKey.UserName, Is.EqualTo("test.user"));
         var clock = sp.GetRequiredService<IClock>();
         Assert.That(session.TimeStarted, Is.EqualTo(clock.Now()));
         var request = sessionDetails
@@ -294,8 +315,8 @@ internal sealed class TempLogSessionTest
         logFiles = await WriteLogFiles(sp);
         var sessionDetails = await logFiles[0].Read();
         var session = sessionDetails.FirstOrDefault()?.Session ?? new();
-        Assert.That(session.SessionKey, Is.Not.EqualTo(""));
-        Assert.That(session.UserName, Is.EqualTo("test.user"));
+        Assert.That(session.SessionKey.ID, Is.Not.EqualTo(""));
+        Assert.That(session.SessionKey.UserName, Is.EqualTo("test.user"));
         var clock = sp.GetRequiredService<IClock>();
         Assert.That(session.TimeStarted, Is.EqualTo(clock.Now()));
         var request = sessionDetails

@@ -9,9 +9,9 @@ public sealed class ThrottledLog
     private readonly int throttleExceptionInterval;
     private DateTimeOffset timeRequestLogged = DateTimeOffset.MinValue;
     private DateTimeOffset timeExceptionLogged = DateTimeOffset.MinValue;
-    private readonly ThrottledPath throttledPath;
+    private readonly ThrottledLogPath throttledPath;
 
-    internal ThrottledLog(ThrottledPath throttledPath, IClock clock)
+    internal ThrottledLog(ThrottledLogPath throttledPath, IClock clock)
     {
         this.throttledPath = throttledPath;
         throttleLogInterval = throttledPath.ThrottleRequestInterval;

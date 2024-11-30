@@ -2,8 +2,7 @@
 
 public sealed class TempLogSessionModel
 {
-    public string SessionKey { get; set; } = "";
-    public string UserName { get; set; } = "";
+    public SessionKey SessionKey { get; set; } = new();
     public string RequesterKey { get; set; } = "";
     public DateTimeOffset TimeStarted { get; set; } = DateTimeOffset.MaxValue;
     public DateTimeOffset TimeEnded { get; set; } = DateTimeOffset.MaxValue;
