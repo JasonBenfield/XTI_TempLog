@@ -12,7 +12,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="XTI_Secrets" Version="1.8.12" />
+		<PackageReference Include="XTI_Secrets" Version="1.8.13" />
 		<PackageReference Include="XTI_Core.Extensions" Version="1.10.25" />
 	</ItemGroup>
 
