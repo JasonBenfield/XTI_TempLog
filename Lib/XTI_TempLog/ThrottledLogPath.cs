@@ -2,16 +2,21 @@
 
 namespace XTI_TempLog;
 
-public sealed partial class ThrottledPath
+public sealed partial class ThrottledLogPath
 {
     private readonly Regex pathRegex;
 
-    public ThrottledPath(TempLogThrottleOptions options)
+    internal ThrottledLogPath(TempLogThrottleOptions options)
         : this(options.Path, options.ThrottleRequestInterval, options.ThrottleExceptionInterval)
     {
     }
 
-    public ThrottledPath(string path, int throttleRequestInterval, int throttleExceptionInterval)
+    public ThrottledLogPath(string path, TimeSpan throttleRequestInterval, TimeSpan throttleExceptionInterval)
+        : this(path, (int)throttleRequestInterval.TotalMilliseconds, (int)throttleExceptionInterval.TotalMilliseconds)
+    {
+    }
+
+    internal ThrottledLogPath(string path, int throttleRequestInterval, int throttleExceptionInterval)
     {
         path = WhitespaceRegex().Replace(path?.Trim() ?? "", "");
         Path = path;
@@ -25,10 +30,12 @@ public sealed partial class ThrottledPath
     }
 
     internal string Path { get; }
-    public int ThrottleRequestInterval { get; }
-    public int ThrottleExceptionInterval { get; }
+    internal int ThrottleRequestInterval { get; }
+    internal int ThrottleExceptionInterval { get; }
 
-    public bool IsForPath(string path) => pathRegex.IsMatch(path);
+    internal bool IsThrottled() => ThrottleRequestInterval > 0 || ThrottleExceptionInterval > 0;
+
+    internal bool IsForPath(string path) => pathRegex.IsMatch(path);
 
     internal string Format() => pathRegex.ToString();
 

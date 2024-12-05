@@ -36,12 +36,12 @@ public sealed class TempLogSessionV1
     {
         StartSessionModel session;
         var environment = await appEnvironmentContext.Value();
-        if (string.IsNullOrWhiteSpace(currentSession.SessionKey))
+        if (currentSession.SessionKey.IsEmpty())
         {
-            currentSession.SessionKey = generateKey();
+            currentSession.SessionKey = new SessionKey(generateKey(), environment.UserName);
             session = new StartSessionModel
             {
-                SessionKey = currentSession.SessionKey,
+                SessionKey = currentSession.SessionKey.Format(),
                 TimeStarted = clock.Now(),
                 UserName = environment.UserName,
                 UserAgent = environment.UserAgent,
@@ -53,7 +53,7 @@ public sealed class TempLogSessionV1
         }
         else
         {
-            session = new StartSessionModel { SessionKey = currentSession.SessionKey };
+            session = new StartSessionModel { SessionKey = currentSession.SessionKey.Format() };
         }
         return session;
     }
@@ -62,7 +62,7 @@ public sealed class TempLogSessionV1
     {
         var session = new AuthenticateSessionModel
         {
-            SessionKey = currentSession.SessionKey,
+            SessionKey = currentSession.SessionKey.Format(),
             UserName = userName
         };
         var serialized = JsonSerializer.Serialize(session);
@@ -79,7 +79,7 @@ public sealed class TempLogSessionV1
         startRequestModel = new StartRequestModel
         {
             RequestKey = generateKey(),
-            SessionKey = currentSession.SessionKey,
+            SessionKey = currentSession.SessionKey.Format(),
             SourceRequestKey = sourceRequestKey,
             InstallationID = environment.InstallationID,
             Path = path,
@@ -137,7 +137,7 @@ public sealed class TempLogSessionV1
     {
         var request = new EndSessionModel
         {
-            SessionKey = currentSession.SessionKey,
+            SessionKey = currentSession.SessionKey.Format(),
             TimeEnded = clock.Now()
         };
         var serialized = JsonSerializer.Serialize(request);
@@ -176,9 +176,9 @@ public sealed class TempLogSessionV1
 
     public Task<LogEntryModelV1> LogException
     (
-        AppEventSeverity severity, 
-        Exception ex, 
-        string caption, 
+        AppEventSeverity severity,
+        Exception ex,
+        string caption,
         string parentEventKey,
         string category
     ) =>
@@ -186,11 +186,11 @@ public sealed class TempLogSessionV1
 
     public async Task<LogEntryModelV1> LogError
     (
-        AppEventSeverity severity, 
-        string message, 
-        string detail, 
-        string caption, 
-        string parentEventKey, 
+        AppEventSeverity severity,
+        string message,
+        string detail,
+        string caption,
+        string parentEventKey,
         string category
     )
     {

@@ -15,8 +15,8 @@ public sealed class TempLogRepository
     private int keyID = 1;
 
     public TempLogRepository(TempLog tempLog)
-        :this(tempLog, Guid.NewGuid().ToString("N"))
-    {   
+        : this(tempLog, Guid.NewGuid().ToString("N"))
+    {
     }
 
     public TempLogRepository(TempLog tempLog, string logSource)
@@ -28,7 +28,7 @@ public sealed class TempLogRepository
 
     internal TempLogSessionModel AddOrUpdateSession
     (
-        string sessionKey,
+        SessionKey sessionKey,
         AppEnvironment environment,
         DateTimeOffset timeStarted
     ) =>
@@ -36,21 +36,28 @@ public sealed class TempLogRepository
 
     internal TempLogSessionModel AddOrUpdateSession
     (
-        string sessionKey,
+        SessionKey sessionKey,
         AppEnvironment environment,
         string userName,
         DateTimeOffset timeStarted
     )
     {
-        if (string.IsNullOrWhiteSpace(sessionKey))
+        if (!sessionKey.IsEmpty() && sessionKey.IsUserNameBlank())
         {
-            sessionKey = GenerateKey("ses");
+            sessionKey = sessionKey with { UserName = userName };
+        }
+        else if 
+        (
+            sessionKey.IsEmpty() || 
+            (!string.IsNullOrWhiteSpace(userName) && !sessionKey.HasUserName(userName))
+        )
+        {
+            sessionKey = new SessionKey(GenerateKey("ses"), userName);
         }
         var session = new TempLogSessionModel
         {
             SessionKey = sessionKey,
             TimeStarted = timeStarted,
-            UserName = userName,
             UserAgent = environment.UserAgent,
             RemoteAddress = environment.RemoteAddress,
             RequesterKey = environment.RequesterKey
@@ -60,7 +67,7 @@ public sealed class TempLogRepository
     }
 
     internal TempLogSessionModel EndSession(TempLogSessionModel session) =>
-        session = sessionDict.AddOrUpdate(session.SessionKey, session, (sk, s) => session);
+        session = sessionDict.AddOrUpdate(session.SessionKey.ID, session, (sk, s) => session);
 
     internal TempLogRequestModel AddOrUpdateRequest
     (
@@ -72,9 +79,9 @@ public sealed class TempLogRepository
         DateTimeOffset timeStarted
     )
     {
-        if(session.UserName != environment.UserName && !string.IsNullOrWhiteSpace(environment.UserName))
+        if (!session.SessionKey.HasUserName(environment.UserName) && !string.IsNullOrWhiteSpace(environment.UserName))
         {
-            session.UserName = environment.UserName;
+            session.SessionKey = session.SessionKey with { UserName = environment.UserName };
             session = RefreshSession(session);
         }
         var request = CreateRequest(session, environment, path, sourceRequestKey, actualCount, timeStarted);
@@ -89,10 +96,10 @@ public sealed class TempLogRepository
 
     private TempLogSessionModel RefreshSession(TempLogSessionModel session)
     {
-        session = sessionDict.AddOrUpdate(session.SessionKey, session, (sk, s) => session);
+        session = sessionDict.AddOrUpdate(session.SessionKey.ID, session, (sk, s) => session);
         foreach (var flattenedLogEntry in flattenedLogEntryDict.Values)
         {
-            if (flattenedLogEntry.Session.SessionKey == session.SessionKey)
+            if (flattenedLogEntry.Session.SessionKey.ID == session.SessionKey.ID)
             {
                 flattenedLogEntry.Session = session;
             }
@@ -123,7 +130,7 @@ public sealed class TempLogRepository
 
     internal void AddOrUpdateRequest(TempLogSessionModel session, TempLogRequestModel request)
     {
-        session = sessionDict.AddOrUpdate(session.SessionKey, session, (sk, s) => s);
+        session = sessionDict.AddOrUpdate(session.SessionKey.ID, session, (sk, s) => s);
         flattenedLogEntryDict.GetOrAdd
         (
             request.RequestKey,
@@ -157,7 +164,7 @@ public sealed class TempLogRepository
             Category = category,
             ActualCount = actualCount
         };
-        session = sessionDict.AddOrUpdate(session.SessionKey, session, (sk, s) => s);
+        session = sessionDict.AddOrUpdate(session.SessionKey.ID, session, (sk, s) => s);
         flattenedLogEntryDict.TryAdd
         (
             $"{request.RequestKey}{logEntry.EventKey}",

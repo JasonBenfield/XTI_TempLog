@@ -9,4 +9,6 @@ public sealed class TempLogRequestModel
     public DateTimeOffset TimeStarted { get; set; } = DateTimeOffset.MaxValue;
     public DateTimeOffset TimeEnded { get; set; } = DateTimeOffset.MaxValue;
     public int ActualCount { get; set; }
+    public string RequestData { get; set; } = "";
+    public string ResultData { get; set; } = "";
 }

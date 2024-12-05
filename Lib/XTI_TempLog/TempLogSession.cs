@@ -106,6 +106,34 @@ public sealed class TempLogSession
         }
     }
 
+    public async Task LogRequestData(string requestData)
+    {
+        if (isRequestLogged && request != null)
+        {
+            if (session == null)
+            {
+                var environment = await appEnvironmentContext.Value();
+                session = logRepo.AddOrUpdateSession(currentSession.SessionKey, environment, clock.Now());
+            }
+            request.RequestData = requestData;
+            logRepo.AddOrUpdateRequest(session, request);
+        }
+    }
+
+    public async Task LogResultData(string resultData)
+    {
+        if (isRequestLogged && request != null)
+        {
+            if (session == null)
+            {
+                var environment = await appEnvironmentContext.Value();
+                session = logRepo.AddOrUpdateSession(currentSession.SessionKey, environment, clock.Now());
+            }
+            request.ResultData = resultData;
+            logRepo.AddOrUpdateRequest(session, request);
+        }
+    }
+
     public async Task EndSession()
     {
         if (session == null)

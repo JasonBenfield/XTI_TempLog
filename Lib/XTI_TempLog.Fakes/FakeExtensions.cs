@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using XTI_TempLog.Abstractions;
 
 namespace XTI_TempLog.Fakes;
 
@@ -14,5 +15,7 @@ public static class FakeExtensions
         services.AddSingleton<TempLog>(sp => sp.GetRequiredService<FakeTempLog>());
         services.AddScoped<TempLogSession>();
         services.AddSingleton<TempLogRepository>();
+        services.AddSingleton<FakeAppEnvironmentContext>();
+        services.AddSingleton<IAppEnvironmentContext>(sp => sp.GetRequiredService<FakeAppEnvironmentContext>());
     }
 }
