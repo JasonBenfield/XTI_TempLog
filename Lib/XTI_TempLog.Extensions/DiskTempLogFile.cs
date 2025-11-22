@@ -67,8 +67,9 @@ public sealed class DiskTempLogFile : ITempLogFile
         {
             Directory.CreateDirectory(dir);
         }
-
-        using var writer = new StreamWriter(path);
-        await writer.WriteAsync(contents);
+        using (var writer = new StreamWriter(path))
+        {
+            await writer.WriteAsync(contents);
+        }
     }
 }

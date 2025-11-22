@@ -23,12 +23,29 @@ internal sealed class TempLogSessionTest
     }
 
     [Test]
-    public async Task ShouldDecryptFile()
+    public async Task ShouldDecryptFiles()
     {
         var sp = Setup();
         var dataProtector = sp.GetDataProtector("XTI_TempLog");
         var diskTempLog = new DiskTempLog(dataProtector, "C:\\XTI\\AppData\\Development\\TempLogTest");
         var files = diskTempLog.Files(DateTimeOffset.Now);
+        var sessionDetails = new List<TempLogSessionDetailModel>();
+        foreach (var file in files)
+        {
+            var fileSessionDetails = await files[0].Read();
+            sessionDetails.AddRange(fileSessionDetails);
+        }
+    }
+
+    [Test]
+    public async Task ShouldDecryptFile()
+    {
+        var sp = Setup();
+        var dataProtector = sp.GetDataProtector("XTI_TempLog");
+        var diskTempLog = new DiskTempLog(dataProtector, @"C:\XTI\AppData\Development\TempLogs");
+        var files = diskTempLog.Files(DateTimeOffset.Now)
+            .Where(f => Path.GetFileName(f.Name).Equals("supportserviceapp_0000006532_2412112331490322265.log"))
+            .ToArray();
         var sessionDetails = new List<TempLogSessionDetailModel>();
         foreach (var file in files)
         {
