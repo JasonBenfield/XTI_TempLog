@@ -38,30 +38,6 @@ public static class Benchmark
         await tempLogSession.EndRequest();
     }
 
-    public static async Task RunOldVersion(int numberOfRequests)
-    {
-        var sp = Setup();
-        var cts = new CancellationTokenSource();
-        using var sessionScope = sp.CreateScope();
-        var tempLogSession = sessionScope.ServiceProvider.GetRequiredService<TempLogSessionV1>();
-        await tempLogSession.StartSession();
-        var requestTasks = new List<Task>();
-        foreach (var i in Enumerable.Range(0, numberOfRequests))
-        {
-            requestTasks.Add(Task.Run(() => LogRequestOldVersion(sp)));
-        }
-        await Task.WhenAll(requestTasks);
-        await tempLogSession.EndSession();
-    }
-
-    private static async Task LogRequestOldVersion(IServiceProvider sp)
-    {
-        using var scope = sp.CreateScope();
-        var tempLogSession = scope.ServiceProvider.GetRequiredService<TempLogSessionV1>();
-        await tempLogSession.StartRequest("/Test/Current");
-        await tempLogSession.EndRequest();
-    }
-
     private static IServiceProvider Setup()
     {
         var hostBuilder = new XtiHostBuilder();
@@ -79,13 +55,6 @@ public static class Benchmark
         );
         hostBuilder.Services.AddXtiDataProtection();
         hostBuilder.Services.AddTempLogServices();
-        hostBuilder.Services.AddScoped<TempLogV1>(sp =>
-        {
-            var dataProtector = sp.GetDataProtector("XTI_TempLog");
-            var appDataFolder = sp.GetRequiredService<AppDataFolder>();
-            return new DiskTempLogV1(dataProtector, appDataFolder.WithSubFolder("TempLogs").Path());
-        });
-        hostBuilder.Services.AddScoped<TempLogSessionV1>();
         var host = hostBuilder.Build();
         return host.Scope();
     }
